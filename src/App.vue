@@ -23,6 +23,5 @@ export default {
   background-color: white;
   min-height: 100vh;
   color: #2c3e50;
-  margin-top: 60px;
 }
 </style>

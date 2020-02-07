@@ -1,18 +1,14 @@
 <template>
 	<div class="oct-container">
-		<div v-for="n in 9" :key="n" class="oct-grid">
-			<MiniOcto></MiniOcto>
-		</div>
+		<div v-for="n in 9" :key="n" class="oct-grid">{{xo}}</div>
 	</div>
 </template>
 
 <script>
-	import MiniOcto from "./MiniOcto"
-
 	export default {
-		name: 'Octothorpe',
-		components: {
-			MiniOcto
+		name: 'MiniOcto',
+		props: {
+			xo: String
 		}
 	}
 </script>
@@ -27,6 +23,7 @@
 
 	.oct-grid {
 		border: black 5px;
+		padding-bottom: 100%;
 		position: relative;
 	}
 
