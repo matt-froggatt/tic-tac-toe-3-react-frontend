@@ -1,51 +1,28 @@
 <template>
-  <div id="board">
-    <Octothorpe msg="hello"/>
-  </div>
+	<div id="board">
+		<Octothorpe/>
+	</div>
 </template>
 
 <script>
-  import Octothorpe from './Octothorpe.vue'
+	import Octothorpe from './Octothorpe.vue'
 
-  export default {
-    name: 'Board',
-    props: {
-      msg: String
-    },
-    components: {
-      Octothorpe
-    }
-  }
+	export default {
+		name: 'Board',
+		components: {
+			Octothorpe
+		}
+	}
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-  #board {
-    border-radius: 10px;
-    border-style: solid;
-    border-color: #533C00;
-    background-color: rgba(253, 255, 147, 0.44);
+	#board {
+		border-radius: 10px;
+		border: solid #533C00 5px;
+		background-color: rgb(253, 255, 147);
+		display: table;
+		margin: 0 auto;
+	}
 
-    max-width: 80vh;
-
-    margin: 0 auto;
-  }
-
-  h3 {
-    margin: 40px 0 0;
-  }
-
-  ul {
-    list-style-type: none;
-    padding: 0;
-  }
-
-  li {
-    display: inline-block;
-    margin: 0 10px;
-  }
-
-  a {
-    color: #42b983;
-  }
 </style>

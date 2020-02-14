@@ -1,122 +1,56 @@
 <template>
-	<div class="oct-container">
-		<div v-for="n in 9" :key="n" class="oct-grid">
-			<MiniOcto></MiniOcto>
-		</div>
-	</div>
+	<table class="oct-container">
+		<tr>
+			<th class="grid-cell bottom right">X</th>
+			<th class="grid-cell bottom left right"></th>
+			<th class="grid-cell bottom left"></th>
+		</tr>
+		<tr>
+			<th class="grid-cell top bottom right"></th>
+			<th class="grid-cell top bottom left right"></th>
+			<th class="grid-cell top bottom left"></th>
+		</tr>
+		<tr>
+			<th class="grid-cell top right"></th>
+			<th class="grid-cell top left right"></th>
+			<th class="grid-cell top left"></th>
+		</tr>
+	</table>
 </template>
 
 <script>
-	import MiniOcto from "./MiniOcto"
 
 	export default {
 		name: 'Octothorpe',
-		components: {
-			MiniOcto
-		}
 	}
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 	.oct-container {
-		padding: 3vh;
-		display: grid;
-		grid-template-columns: 1fr 1fr 1fr;
+		margin: 3vh;
+		border-collapse: collapse;
 	}
 
-	.oct-grid {
-		border: black 5px;
-		position: relative;
+	.top {
+		border-top: solid black 5px;
 	}
 
-	.oct-grid:nth-child(3n + 1)::after {
-		content: "";
-		position: absolute;
-		right: 0;
-		top: 0;
-		bottom: 0;
-		width: 5px;
-		background-color: black;
+	.bottom {
+		border-bottom: solid black 5px;
 	}
 
-	.oct-grid:nth-child(3n + 1)::after {
-		content: "";
-		position: absolute;
-		right: 0;
-		top: 0;
-		bottom: 0;
-		width: 5px;
-		background-color: black;
+	.left {
+		border-left: solid black 5px;
 	}
 
-	.oct-grid:nth-child(3n)::after {
-		content: "";
-		position: absolute;
-		left: 0;
-		top: 0;
-		bottom: 0;
-		width: 5px;
-		background-color: black;
+	.right {
+		border-right: solid black 5px;
 	}
 
-	.oct-grid:nth-child(-n + 3)::before {
-		content: "";
-		position: absolute;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		height: 5px;
-		background-color: black;
-	}
-
-	.oct-grid:nth-child(n+7)::before {
-		content: "";
-		position: absolute;
-		left: 0;
-		right: 0;
-		top: 0;
-		height: 5px;
-		background-color: black;
-	}
-
-	.oct-grid:nth-child(1)::after {
-		border-top-left-radius: 10px;
-		border-top-right-radius: 10px;
-	}
-
-	.oct-grid:nth-child(1)::before {
-		border-top-left-radius: 10px;
-		border-bottom-left-radius: 10px;
-	}
-
-	.oct-grid:nth-child(3)::after {
-		border-top-left-radius: 10px;
-		border-top-right-radius: 10px;
-	}
-
-	.oct-grid:nth-child(3)::before {
-		border-top-right-radius: 10px;
-		border-bottom-right-radius: 10px;
-	}
-
-	.oct-grid:nth-child(7)::after {
-		border-bottom-left-radius: 10px;
-		border-bottom-right-radius: 10px;
-	}
-
-	.oct-grid:nth-child(7)::before {
-		border-top-left-radius: 10px;
-		border-bottom-left-radius: 10px;
-	}
-
-	.oct-grid:nth-child(9)::after {
-		border-bottom-left-radius: 10px;
-		border-bottom-right-radius: 10px;
-	}
-
-	.oct-grid:nth-child(9)::before {
-		border-top-right-radius: 10px;
-		border-bottom-right-radius: 10px;
+	.grid-cell {
+		font-size: 10vw;
+		height: 10vw;
+		width: 10vw;
 	}
 </style>

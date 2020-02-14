@@ -1,14 +1,18 @@
 <template>
 	<div class="oct-container">
-		<div v-for="n in 9" :key="n" class="oct-grid">{{xo}}</div>
+		<div v-for="n in 9" :key="n" class="oct-grid"><XO/><p class="letter">X</p></div>
 	</div>
 </template>
 
 <script>
+	import XO from './XO.vue'
 	export default {
 		name: 'MiniOcto',
 		props: {
 			xo: String
+		},
+		components: {
+			XO
 		}
 	}
 </script>
@@ -19,12 +23,6 @@
 		padding: 3vh;
 		display: grid;
 		grid-template-columns: 1fr 1fr 1fr;
-	}
-
-	.oct-grid {
-		border: black 5px;
-		padding-bottom: 100%;
-		position: relative;
 	}
 
 	.oct-grid:nth-child(3n + 1)::after {
@@ -115,5 +113,8 @@
 	.oct-grid:nth-child(9)::before {
 		border-top-right-radius: 10px;
 		border-bottom-right-radius: 10px;
+	}
+	.letter {
+		margin: 0;
 	}
 </style>
