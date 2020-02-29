@@ -1,6 +1,6 @@
 <template>
 	<div id="board">
-		<Octothorpe/>
+		<Octothorpe :state="state"/>
 	</div>
 </template>
 
@@ -9,6 +9,15 @@
 
 	export default {
 		name: 'Board',
+
+		data() {
+			return {
+				state: ['X', '', '',
+					'', '', '',
+					'', 'O', '']
+			}
+		},
+
 		components: {
 			Octothorpe
 		}
