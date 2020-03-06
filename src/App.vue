@@ -1,29 +1,34 @@
 <template>
-	<div id="app">
-		<Board/>
-	</div>
+  <div id="app">
+    <Board :state="state" />
+  </div>
 </template>
 
 <script>
-	import Board from './components/Board.vue'
+import Board from "./components/Board.vue";
 
-	export default {
-		name: 'app',
-		components: {
-			Board
-		}
-	}
+export default {
+  name: "app",
+  components: {
+    Board
+  },
+  data() {
+    return {
+      state: ["X", "O", "X", "O", "X", "O", "X", "O", "X"]
+    };
+  }
+};
 </script>
 <style>
-	html {
-		background-color: white;
-	}
+html {
+  background-color: white;
+}
 
-	#app {
-		font-family: 'Avenir', Helvetica, Arial, sans-serif;
-		-webkit-font-smoothing: antialiased;
-		-moz-osx-font-smoothing: grayscale;
-		text-align: center;
-		color: black;
-	}
+#app {
+  font-family: "Avenir", Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-align: center;
+  color: black;
+}
 </style>
