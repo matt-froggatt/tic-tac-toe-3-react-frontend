@@ -1,5 +1,5 @@
 <template>
-  <div class="xo">{{Character}}</div>
+  <div class="xo" @click="this.$parent.$emit('test')">{{Character}}</div>
 </template>
 
 <script>

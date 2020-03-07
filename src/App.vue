@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <Board :state="state" />
+    <Board :state="state" v-on:test="doSomething" />
   </div>
 </template>
 
@@ -16,6 +16,12 @@ export default {
     return {
       state: ["X", "O", "X", "O", "X", "O", "X", "O", "X"]
     };
+  },
+
+  methods: {
+    doSomething() {
+      alert("yes");
+    }
   }
 };
 </script>

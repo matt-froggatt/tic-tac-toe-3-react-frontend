@@ -1,6 +1,6 @@
 <template>
   <div id="board">
-    <Octothorpe :state="state" />
+    <Octothorpe :state="state" @test="doSomething" />
   </div>
 </template>
 
@@ -16,6 +16,12 @@ export default {
 
   components: {
     Octothorpe
+  },
+
+  methods: {
+    doSomething() {
+      alert("yes");
+    }
   }
 };
 </script>
