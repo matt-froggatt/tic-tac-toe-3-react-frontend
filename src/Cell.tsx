@@ -1,12 +1,33 @@
 import React from "react";
-import "./Cell.css";
+import { styled } from "linaria/react";
+
+const BasicButton = styled.button`
+	border: none;
+	background: none;
+	outline: 0;
+	min-width: 50px;
+	min-height: 50px;
+
+	:hover {
+		cursor: pointer;
+	}
+
+	:focus {
+		outline: 0;
+	}
+
+	/* Get rid of Firefox dotted outline on button. */
+	::-moz-focus-inner {
+		border: 0;
+	}
+`;
 
 function Cell(props: any) {
-  return (
-    <button type="button" className="Cell" onClick={props.updateData}>
-      {props.data}
-    </button>
-  );
+	return (
+		<BasicButton type="button" onClick={props.updateData}>
+			{props.data}
+		</BasicButton>
+	);
 }
 
 export default Cell;
