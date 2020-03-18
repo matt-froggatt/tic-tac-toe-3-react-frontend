@@ -1,7 +1,7 @@
 import React from "react";
 import Cell from "./Cell";
 import { styled } from "linaria/react";
-import DataProps from "./Props";
+import DataProps from "../Props";
 
 const StyledTable = styled.table`
 	border-collapse: collapse;
