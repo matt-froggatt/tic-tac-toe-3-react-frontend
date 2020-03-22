@@ -10,8 +10,26 @@ const CentredDiv = styled.div`
 	justify-content: center;
 `;
 
+function updateState(x: number, y: number, state: any) {
+	return {
+		winner: "",
+		turn: state.turn === "X" ? "O" : "X",
+		board:
+			state.winner === ""
+				? state.board.map((row: string[], i: number) =>
+						row.map((column: string, j) =>
+							state.board[i][j] === "" && i === y && j === x
+								? state.turn
+								: state.board[i][j]
+						)
+				  )
+				: state.board
+	};
+}
+
 function App() {
 	const [state, setState] = useState({
+		winner: "",
 		turn: "X",
 		board: [
 			["", "", ""],
@@ -22,19 +40,11 @@ function App() {
 
 	return (
 		<CentredDiv>
+			<p>{state.winner} is win</p>
 			<Octothorp
 				data={state.board}
 				updateData={(x: number, y: number) =>
-					setState({
-						turn: state.turn === "X" ? "O" : "X",
-						board: state.board.map((row: string[], i) =>
-							row.map((column: string, j) =>
-								state.board[i][j] === "" && i === y && j === x
-									? state.turn
-									: state.board[i][j]
-							)
-						)
-					})
+					setState(updateState(x, y, state))
 				}
 			/>
 		</CentredDiv>
