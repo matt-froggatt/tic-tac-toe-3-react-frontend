@@ -23,7 +23,7 @@ function App() {
 		<CentredDiv>
 			<WinnerP>{state.winner} is win</WinnerP>
 			<Table
-				data={state.board}
+				data={{ lastPlayed: state.lastPlayed, board: state.board }}
 				updateData={(
 					outerX: number,
 					outerY: number,

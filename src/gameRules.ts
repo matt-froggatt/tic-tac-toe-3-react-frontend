@@ -3,12 +3,14 @@ import { ReactElement } from "react";
 interface State {
 	winner: string;
 	turn: string;
+	lastPlayed: number[];
 	board: string[][][][];
 }
 
 const startState = {
 	winner: "",
 	turn: "X",
+	lastPlayed: [-1, -1],
 	board: [
 		[
 			[
@@ -130,6 +132,7 @@ function updateNoWinner(outerX: number, outerY: number, x: number, y: number, st
 	return {
 		winner: state.winner,
 		turn: state.turn === "X" ? "O" : "X",
+		lastPlayed: [x, y],
 		board:
 			state.winner === ""
 				? state.board.map((outerRow: string[][][], i: number) =>
@@ -151,6 +154,7 @@ export function updateState(outerX: number, outerY: number, x: number, y: number
 	const tempState = updateNoWinner(outerX, outerY, x, y, state);
 	return {
 		winner: "",
+		lastPlayed: tempState.lastPlayed,
 		turn: tempState.turn,
 		board: tempState.board
 	};

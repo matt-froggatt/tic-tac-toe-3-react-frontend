@@ -5,6 +5,8 @@ import DataProps from "../Props";
 
 const StyledTable = styled.table`
 	border-collapse: collapse;
+	background-color: ${(props: { playable: boolean }) =>
+		props.playable ? " green " : " none "};
 `;
 
 const StyledTd = styled.td`
@@ -13,15 +15,23 @@ const StyledTd = styled.td`
 	text-align: center;
 `;
 
-function Table(props: DataProps<string[][][][]>): ReactElement {
+function Table(props: DataProps<any>): ReactElement {
 	return (
-		<StyledTable>
+		<StyledTable playable={false}>
 			<tbody>
-				{props.data.map((outerRow: string[][][], i: number) => (
+				{props.data.board.map((outerRow: string[][][], i: number) => (
 					<tr key={i}>
 						{outerRow.map((outerColumn: string[][], j: number) => (
 							<StyledTd key={j}>
-								<StyledTable key={j}>
+								<StyledTable
+									key={j}
+									playable={
+										(i === props.data.lastPlayed[1] &&
+											j === props.data.lastPlayed[0]) ||
+										(props.data.lastPlayed[0] === -1 &&
+											props.data.lastPlayed[1] === -1)
+									}
+								>
 									<tbody key={j}>
 										{outerColumn.map(
 											(row: string[], k: number) => (
