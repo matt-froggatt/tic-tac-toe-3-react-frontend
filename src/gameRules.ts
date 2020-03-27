@@ -132,14 +132,14 @@ function updateNoWinner(outerX: number, outerY: number, x: number, y: number, st
 	return {
 		winner: state.winner,
 		turn: state.turn === "X" ? "O" : "X",
-		lastPlayed: [x, y],
+		lastPlayed: (outerX === state.lastPlayed[0] && outerY === state.lastPlayed[1]) || (state.lastPlayed[0] === -1 && state.lastPlayed[1] === -1) ? [x, y] : state.lastPlayed,
 		board:
 			state.winner === ""
 				? state.board.map((outerRow: string[][][], i: number) =>
 					outerRow.map((outerColumn: string[][], j: number) =>
 						outerColumn.map((row: string[], k: number) =>
 							row.map((column: string, l: number) =>
-								state.board[i][j][k][l] === "" && i === outerY && j === outerX && k === y && l === x
+								((state.lastPlayed[0] === -1 && state.lastPlayed[1] === -1) || (outerX === state.lastPlayed[0] && outerY === state.lastPlayed[1])) && state.board[i][j][k][l] === "" && i === outerY && j === outerX && k === y && l === x
 									? state.turn
 									: state.board[i][j][k][l]
 							)
