@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { styled } from "linaria/react";
-import Octothorp from "./Octothorp";
+import Table from "./Table";
 import startState, { updateState } from "../gameRules";
 
 const CentredDiv = styled.div`
@@ -22,7 +22,7 @@ function App() {
 	return (
 		<CentredDiv>
 			<WinnerP>{state.winner} is win</WinnerP>
-			<Octothorp
+			<Table
 				data={state.board}
 				updateData={(x: number, y: number) =>
 					setState(updateState(x, y, state))

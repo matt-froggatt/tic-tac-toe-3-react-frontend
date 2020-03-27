@@ -13,7 +13,7 @@ const StyledTable = styled.table`
 	}
 `;
 
-function Octothorp(props: DataProps<any>) {
+function Table(props: DataProps<any>) {
 	return (
 		<StyledTable>
 			<tbody>
@@ -24,6 +24,7 @@ function Octothorp(props: DataProps<any>) {
 								return (
 									<td key={j}>
 										<Cell
+											key={j}
 											data={column}
 											updateData={() =>
 												props.updateData(j, i)
@@ -40,4 +41,4 @@ function Octothorp(props: DataProps<any>) {
 	);
 }
 
-export default Octothorp;
+export default Table;
