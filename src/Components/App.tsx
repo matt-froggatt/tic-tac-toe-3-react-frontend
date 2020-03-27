@@ -24,9 +24,12 @@ function App() {
 			<WinnerP>{state.winner} is win</WinnerP>
 			<Table
 				data={state.board}
-				updateData={(x: number, y: number) =>
-					setState(updateState(x, y, state))
-				}
+				updateData={(
+					outerX: number,
+					outerY: number,
+					x: number,
+					y: number
+				) => setState(updateState(outerX, outerY, x, y, state))}
 			/>
 		</CentredDiv>
 	);
