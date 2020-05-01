@@ -1,10 +1,13 @@
-import { ReactElement } from "react";
+interface InnerState {
+	winner: string;
+	state: string[][];
+}
 
 interface State {
 	winner: string;
 	turn: string;
 	lastPlayed: number[];
-	board: string[][][][];
+	board: InnerState[][];
 }
 
 const startState = {
@@ -13,57 +16,85 @@ const startState = {
 	lastPlayed: [-1, -1],
 	board: [
 		[
-			[
-				["", "", ""],
-				["", "", ""],
-				["", "", ""]
-			],
-			[
-				["", "", ""],
-				["", "", ""],
-				["", "", ""]
-			],
-			[
-				["", "", ""],
-				["", "", ""],
-				["", "", ""]
-			]
+			{
+				winner: "",
+				state: [
+					["", "", ""],
+					["", "", ""],
+					["", "", ""]
+				]
+			}
+			,
+			{
+				winner: "",
+				state: [
+					["", "", ""],
+					["", "", ""],
+					["", "", ""]
+				]
+			},
+			{
+				winner: "",
+				state: [
+					["", "", ""],
+					["", "", ""],
+					["", "", ""]
+				]
+			}
 
 		],
 		[
-			[
-				["", "", ""],
-				["", "", ""],
-				["", "", ""]
-			],
-			[
-				["", "", ""],
-				["", "", ""],
-				["", "", ""]
-			],
-			[
-				["", "", ""],
-				["", "", ""],
-				["", "", ""]
-			]
+			{
+				winner: "",
+				state: [
+					["", "", ""],
+					["", "", ""],
+					["", "", ""]
+				]
+			},
+			{
+				winner: "",
+				state: [
+					["", "", ""],
+					["", "", ""],
+					["", "", ""]
+				]
+			},
+			{
+				winner: "",
+				state: [
+					["", "", ""],
+					["", "", ""],
+					["", "", ""]
+				]
+			}
 
 		],
 		[
-			[
-				["", "", ""],
-				["", "", ""],
-				["", "", ""]
-			],
-			[
-				["", "", ""],
-				["", "", ""],
-				["", "", ""]
-			],
-			[
-				["", "", ""],
-				["", "", ""],
-				["", "", ""]
-			]
+			{
+				winner: "",
+				state: [
+					["", "", ""],
+					["", "", ""],
+					["", "", ""]
+				]
+			},
+			{
+				winner: "",
+				state: [
+					["", "", ""],
+					["", "", ""],
+					["", "", ""]
+				]
+			},
+			{
+				winner: "",
+				state: [
+					["", "", ""],
+					["", "", ""],
+					["", "", ""]
+				]
+			}
 
 		]
 	]
@@ -128,6 +159,7 @@ const startState = {
 //	return state.winner;
 //}
 //
+
 function updateNoWinner(outerX: number, outerY: number, x: number, y: number, state: State): State {
 	return {
 		winner: state.winner,
@@ -135,15 +167,19 @@ function updateNoWinner(outerX: number, outerY: number, x: number, y: number, st
 		lastPlayed: (outerX === state.lastPlayed[0] && outerY === state.lastPlayed[1]) || (state.lastPlayed[0] === -1 && state.lastPlayed[1] === -1) ? [x, y] : state.lastPlayed,
 		board:
 			state.winner === ""
-				? state.board.map((outerRow: string[][][], i: number) =>
-					outerRow.map((outerColumn: string[][], j: number) =>
-						outerColumn.map((row: string[], k: number) =>
-							row.map((column: string, l: number) =>
-								((state.lastPlayed[0] === -1 && state.lastPlayed[1] === -1) || (outerX === state.lastPlayed[0] && outerY === state.lastPlayed[1])) && state.board[i][j][k][l] === "" && i === outerY && j === outerX && k === y && l === x
-									? state.turn
-									: state.board[i][j][k][l]
+				? state.board.map((outerRow: InnerState[], i: number) =>
+					outerRow.map((outerColumn: InnerState, j: number) => {
+						return {
+							winner: "", // Update winner on move
+							state: outerColumn.state.map((row: string[], k: number) =>
+								row.map((column: string, l: number) =>
+									((state.lastPlayed[0] === -1 && state.lastPlayed[1] === -1) || (outerX === state.lastPlayed[0] && outerY === state.lastPlayed[1])) && state.board[i][j].state[k][l] === "" && i === outerY && j === outerX && k === y && l === x
+										? state.turn
+										: state.board[i][j].state[k][l]
+								)
 							)
-						)
+						}
+					}
 					)
 				)
 				: state.board
@@ -153,7 +189,7 @@ function updateNoWinner(outerX: number, outerY: number, x: number, y: number, st
 export function updateState(outerX: number, outerY: number, x: number, y: number, state: State): State {
 	const tempState = updateNoWinner(outerX, outerY, x, y, state);
 	return {
-		winner: "",
+		winner: "", // Check winners of InnerStates
 		lastPlayed: tempState.lastPlayed,
 		turn: tempState.turn,
 		board: tempState.board
