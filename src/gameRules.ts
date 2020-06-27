@@ -113,64 +113,9 @@ const startState: State = {
 	}
 };
 
-//function whoWon(state: InnerState): string {
-//	if (state.winner === "") {
-//		const lines = [
-//			[
-//				[0, 0],
-//				[0, 1],
-//				[0, 2]
-//			],
-//			[
-//				[1, 0],
-//				[1, 1],
-//				[1, 2]
-//			],
-//			[
-//				[2, 0],
-//				[2, 1],
-//				[2, 2]
-//			],
-//			[
-//				[0, 0],
-//				[1, 0],
-//				[2, 0]
-//			],
-//			[
-//				[0, 1],
-//				[1, 1],
-//				[2, 1]
-//			],
-//			[
-//				[0, 2],
-//				[1, 2],
-//				[2, 2]
-//			],
-//			[
-//				[0, 0],
-//				[1, 1],
-//				[2, 2]
-//			],
-//			[
-//				[0, 2],
-//				[1, 1],
-//				[2, 0]
-//			]
-//		];
-//		for (let i = 0; i < lines.length; i++) {
-//			const [[a1, a2], [b1, b2], [c1, c2]] = lines[i];
-//			if (
-//				state.state[a1][a2] !== "" &&
-//				state.state[a1][a2] === state.state[b1][b2] &&
-//				state.state[a1][a2] === state.state[c1][c2]
-//			) {
-//				return state.state[a1][a2];
-//			}
-//		}
-//		return "";
-//	}
-//	return state.winner;
-//}
+function whoWon(state: InnerState): any {
+	return state.winner;
+}
 
 
 //function updateNoWinnerInner(i: number, j: number, x: number, y: number, outerX: number, outerY: number, outerColumn: string[][], state: State): string[][] {
@@ -201,24 +146,28 @@ const startState: State = {
 //	};
 //}
 
-function changeAtCoordinates(coordinates: Coordinates, board: InnerState, change: Function): InnerState {
+function changeAtCoordinates(coordinates: Coordinates, board: InnerState, change: Function): InnerState | null {
 	const temp = coordinates.data.shift();
 	const dataItem = board.state[temp!.x][temp!.y]
 	if (isBoard(dataItem)) {
-		board.state[temp!.x][temp!.y] = changeAtCoordinates(coordinates, dataItem, change);
-		return board;
-	} else {
+		const tempCell = changeAtCoordinates(coordinates, dataItem, change)
+		if (tempCell) {
+			board.state[temp!.x][temp!.y] = tempCell
+			return board;
+		} else return null
+	} else if (board.state[temp!.x][temp!.y] === "") {
 		board.state[temp!.x][temp!.y] = change(dataItem);
 		return board;
-	}
+	} else return null
 }
 
 export function updateState(coordinates: Coordinates, state: State): State {
+	const newBoard = changeAtCoordinates(coordinates, state.board, () => state.turn);
 	return {
-		winner: state.winner, // Check winners of InnerStates
+		winner: newBoard ? whoWon(newBoard) : state.winner, // Check winners of InnerStates
 		lastPlayed: state.lastPlayed,
-		turn: state.turn === "X" ? "O" : "X",
-		board: changeAtCoordinates(coordinates, state.board, () => state.turn)
+		turn: newBoard ? state.turn === "X" ? "O" : "X" : state.turn,
+		board: newBoard ? newBoard : state.board
 	};
 }
 
