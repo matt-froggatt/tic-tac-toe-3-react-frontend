@@ -211,7 +211,6 @@ function changeAtCoordinates(coordinates: Coordinates, board: InnerState, change
 		board.state[temp!.x][temp!.y] = change(dataItem);
 		return board;
 	}
-	return board;
 }
 
 export function updateState(coordinates: Coordinates, state: State): State {
