@@ -12,8 +12,8 @@ const BasicButton = styled.button`
 
 function Cell(props: any) {
 	return (
-		<BasicButton type="button" onClick={props.updateData}>
-			{props.data}
+		<BasicButton type="button" onClick={props.updateState}>
+			{props.children}
 		</BasicButton>
 	);
 }

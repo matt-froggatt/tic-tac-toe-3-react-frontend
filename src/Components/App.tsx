@@ -1,7 +1,15 @@
 import React, { useState } from "react";
 import { styled } from "linaria/react";
 import Table from "./Table";
-import startState, { updateState } from "../gameRules";
+import startState, {
+	updateState,
+	getBoardInfo,
+	isBoard,
+	getBoardFromState,
+	createCoordinates,
+	updateCoordinates,
+} from "../gameRules";
+import Cell from "./Cell";
 
 const CentredDiv = styled.div`
 	width: 100%;
@@ -16,21 +24,47 @@ const WinnerP = styled.p`
 	margin: 10vh;
 `;
 
+function genTable(
+	state: any,
+	coordinates: any,
+	updateState: Function
+): any[][] {
+	return getBoardInfo(state).map((outer: any, i: number) =>
+		outer.map((inner: any, j: number) =>
+			isBoard(inner) ? (
+				<Table key={"0" + i + j}>
+					{genTable(
+						inner,
+						updateCoordinates(coordinates, i, j),
+						updateState)
+					}
+				</Table>
+			) : (
+					<Cell
+						key={"1" + i + j}
+						updateState={() => updateState(updateCoordinates(coordinates, i, j))}
+					>
+						{inner}
+					</Cell>
+				)
+		)
+	);
+}
+
 function App() {
 	const [state, setState] = useState(startState);
 
 	return (
 		<CentredDiv>
 			<WinnerP>{state.winner} is win</WinnerP>
-			<Table
-				data={{ lastPlayed: state.lastPlayed, board: state.board }}
-				updateData={(
-					outerX: number,
-					outerY: number,
-					x: number,
-					y: number
-				) => setState(updateState(outerX, outerY, x, y, state))}
-			/>
+			<Table>
+				{genTable(
+					getBoardFromState(state),
+					createCoordinates(),
+					(coordinates: any) =>
+						setState(updateState(coordinates, state))
+				)}
+			</Table>
 		</CentredDiv>
 	);
 }

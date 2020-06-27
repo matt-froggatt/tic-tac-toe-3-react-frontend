@@ -1,7 +1,5 @@
 import React, { ReactElement } from "react";
-import Cell from "./Cell";
 import { styled } from "linaria/react";
-import DataProps from "../Props";
 
 const StyledTable = styled.table`
 	border-collapse: collapse;
@@ -15,84 +13,17 @@ const StyledTd = styled.td`
 	text-align: center;
 `;
 
-function Table(props: DataProps<any>): ReactElement {
+function Table(props: any): ReactElement {
 	return (
 		<StyledTable playable={false}>
 			<tbody>
-				{props.data.board.map(
-					(
-						outerRow: { winner: string; state: string[][] }[],
-						i: number
-					) => (
-						<tr key={i}>
-							{outerRow.map(
-								(
-									outerColumn: {
-										winner: string;
-										state: string[][];
-									},
-									j: number
-								) => (
-									<StyledTd key={j}>
-										<StyledTable
-											key={j}
-											playable={
-												(i ===
-													props.data.lastPlayed[1] &&
-													j ===
-														props.data
-															.lastPlayed[0]) ||
-												(props.data.lastPlayed[0] ===
-													-1 &&
-													props.data.lastPlayed[1] ===
-														-1)
-											}
-										>
-											<tbody key={j}>
-												{outerColumn.state.map(
-													(
-														row: string[],
-														k: number
-													) => (
-														<tr key={k}>
-															{row.map(
-																(
-																	column: string,
-																	l: number
-																) => (
-																	<StyledTd
-																		key={l}
-																	>
-																		<Cell
-																			key={
-																				l
-																			}
-																			data={
-																				column
-																			}
-																			updateData={() =>
-																				props.updateData(
-																					j,
-																					i,
-																					l,
-																					k
-																				)
-																			}
-																		/>
-																	</StyledTd>
-																)
-															)}
-														</tr>
-													)
-												)}
-											</tbody>
-										</StyledTable>
-									</StyledTd>
-								)
-							)}
-						</tr>
-					)
-				)}
+				{props.children.map((outer: any, i: number) => (
+					<tr key={"" + i}>
+						{outer.map((inner: any, j: number) => (
+							<StyledTd key={"" + i + j}>{inner}</StyledTd>
+						))}
+					</tr>
+				))}
 			</tbody>
 		</StyledTable>
 	);
