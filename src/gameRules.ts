@@ -1,3 +1,6 @@
+
+// Need to update game based on message
+
 interface InnerState {
 	winner: string;
 	state: InnerState[][] | string[][];
@@ -114,6 +117,19 @@ const startState: State = {
 };
 
 function whoWon(state: InnerState): any {
+	if (isBoard(state.state)) {
+		// check recursively
+	} else {
+		const chars = state.state as string[][];
+
+		for (let i = 0; i < chars.length; ++i) {
+			let rowComparator = chars[i][0]
+			for (let j = 0; j < chars[i].length; ++j) {
+
+			}
+			if (rowComparator !== "") return rowComparator;
+		}
+	}
 	return state.winner;
 }
 
@@ -151,11 +167,11 @@ function changeAtCoordinates(coordinates: Coordinates, board: InnerState, change
 	const dataItem = board.state[temp!.x][temp!.y]
 	if (isBoard(dataItem)) {
 		const tempCell = changeAtCoordinates(coordinates, dataItem, change)
-		if (tempCell) {
+		if (tempCell && board.winner === "") {
 			board.state[temp!.x][temp!.y] = tempCell
 			return board;
 		} else return null
-	} else if (board.state[temp!.x][temp!.y] === "") {
+	} else if (board.state[temp!.x][temp!.y] === "" && board.winner === "") {
 		board.state[temp!.x][temp!.y] = change(dataItem);
 		return board;
 	} else return null

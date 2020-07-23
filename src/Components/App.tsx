@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { styled } from "linaria/react";
 import Table from "./Table";
 import startState, {
@@ -10,6 +10,10 @@ import startState, {
 	updateCoordinates,
 } from "../gameRules";
 import Cell from "./Cell";
+
+const URL = window.location.hostname + ":5000"
+
+
 
 const CentredDiv = styled.div`
 	width: 100%;
@@ -52,17 +56,25 @@ function genTable(
 }
 
 function App() {
-	const [state, setState] = useState(startState);
+	const [state, setState] = useState({ id: "waiting...", boardState: startState });
+
+	useEffect(() => {
+		console.log("wowee")
+		const websocket = new WebSocket("ws://" + URL + "/ws")
+		websocket.onopen = msg => websocket.send("id")
+		websocket.onmessage = msg => setState({ id: msg.data, boardState: state.boardState })
+	}, [])
 
 	return (
 		<CentredDiv>
-			<WinnerP>{state.winner} is win</WinnerP>
+			<h1>Your ID is: {state.id}</h1>
+			<WinnerP>{state.boardState.winner} is win</WinnerP>
 			<Table>
 				{genTable(
-					getBoardFromState(state),
+					getBoardFromState(state.boardState),
 					createCoordinates(),
 					(coordinates: any) =>
-						setState(updateState(coordinates, state))
+						setState({ id: state.id, boardState: updateState(coordinates, state.boardState) })
 				)}
 			</Table>
 		</CentredDiv>
