@@ -2,6 +2,7 @@ import {Coordinates, getBoardInfo, InnerState, isBoard, updateCoordinates} from 
 import Table from "./Table";
 import Cell from "./Cell";
 import React from "react";
+import IconFromText from "./Icons/IconFromText";
 
 interface GenTableProps {
     state: InnerState
@@ -27,7 +28,7 @@ const GenTable: React.FC<GenTableProps> = (
                         key={"1" + i + j}
                         updateState={() => updateState(updateCoordinates(coordinates, i, j))}
                     >
-                        {inner}
+                        <IconFromText text={inner} />
                     </Cell>
                 )
             )
