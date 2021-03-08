@@ -2,7 +2,7 @@ import React from "react";
 
 function Cell(props: any) {
 	return (
-		<button className="w-16 h-16" type="button" onClick={props.updateState}>
+		<button className="w-20 h-20 flex items-center justify-center" type="button" onClick={props.updateState}>
 			{props.children}
 		</button>
 	);
