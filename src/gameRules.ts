@@ -1,7 +1,7 @@
 
 // Need to update game based on message
 
-interface InnerState {
+export interface InnerState {
 	winner: string;
 	state: InnerState[][] | string[][];
 }

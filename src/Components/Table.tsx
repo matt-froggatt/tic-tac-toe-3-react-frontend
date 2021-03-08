@@ -1,31 +1,18 @@
-import React, { ReactElement } from "react";
-import { styled } from "linaria/react";
-
-const StyledTable = styled.table`
-	border-collapse: collapse;
-	background-color: ${(props: { playable: boolean }) =>
-		props.playable ? " green " : " none "};
-`;
-
-const StyledTd = styled.td`
-	border: solid black 5px;
-	color: black;
-	text-align: center;
-`;
+import React, {ReactElement} from "react";
 
 function Table(props: any): ReactElement {
 	return (
-		<StyledTable playable={false}>
+		<table className="border-collapse m-3">
 			<tbody>
 				{props.children.map((outer: any, i: number) => (
-					<tr key={"" + i}>
+					<tr className="border-t-4 border-black border-solid first:border-none" key={"table-row-" + i}>
 						{outer.map((inner: any, j: number) => (
-							<StyledTd key={"" + i + j}>{inner}</StyledTd>
+							<td className="border-l-4 border-black border-solid first:border-none flex-shrink" key={"table-item-" + i + j}>{inner}</td>
 						))}
 					</tr>
 				))}
 			</tbody>
-		</StyledTable>
+		</table>
 	);
 }
 
