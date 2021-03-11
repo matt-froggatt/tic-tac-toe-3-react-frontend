@@ -72,35 +72,6 @@ function whoWon(state: InnerState): any {
     return state.winner;
 }
 
-
-//function updateNoWinnerInner(i: number, j: number, x: number, y: number, outerX: number, outerY: number, outerColumn: string[][], state: State): string[][] {
-//
-//	return outerColumn.map((row: string[], k: number) =>
-//		row.map((column: string, l: number) =>
-//			((state.lastPlayed[0] === -1 && state.lastPlayed[1] === -1) || (outerX === state.lastPlayed[0] && outerY === state.lastPlayed[1])) && state.board[i][j].state[k][l] === "" && i === outerY && j === outerX && k === y && l === x
-//				? state.turn
-//				: state.board[i][j].state[k][l]
-//		)
-//	)
-//}
-
-//function updateNoWinner(outerX: number, outerY: number, x: number, y: number, state: State): State {
-//	return {
-//		winner: state.winner,
-//		turn: state.turn === "X" ? "O" : "X",
-//		lastPlayed: (outerX === state.lastPlayed[0] && outerY === state.lastPlayed[1]) || (state.lastPlayed[0] === -1 && state.lastPlayed[1] === -1) ? [x, y] : state.lastPlayed,
-//		board: state.winner === "" ? state.board.map((outerRow: InnerState[], i: number) =>
-//			outerRow.map((outerColumn: InnerState, j: number) => {
-//				if (outerColumn.winner === "") {
-//					let tempState = updateNoWinnerInner(i, j, x, y, outerX, outerY, outerColumn.state, state);
-//					return { winner: whoWon({ winner: outerColumn.winner, state: tempState }), state: tempState };
-//				} else return outerColumn;
-//			})
-//		) : state.board
-//
-//	};
-//}
-
 function changeAtCoordinates(coordinates: Coordinates, board: InnerState, change: Function): InnerState | null {
     const temp = coordinates.data.shift();
     const dataItem = board.inner[temp!.x][temp!.y]
