@@ -7,26 +7,29 @@ import IconFromText from "./Icons/IconFromText";
 interface GenTableProps {
     state: InnerState
     coordinates: Coordinates
-    updateState: Function
+    updateState: any
+    isParentPlayable?: boolean
 }
 
 const GenTable: React.FC<GenTableProps> = (
     {
         state,
         coordinates,
-        updateState
-    }: GenTableProps
+        updateState,
+        isParentPlayable = false
+    }
 ) =>
-    <Table>{
+    <Table isPlayable={state.isPlayable} isParentPlayable={isParentPlayable}>{
         getBoardInfo(state).map((outer: any, i: number) =>
             outer.map((inner: any, j: number) =>
                 isBoard(inner) ? (
                     <GenTable state={inner} coordinates={updateCoordinates(coordinates, i, j)}
-                              updateState={updateState}/>
+                              updateState={updateState} isParentPlayable={state.isPlayable}/>
                 ) : (
                     <Cell
                         key={"1" + i + j}
-                        updateState={() => updateState(updateCoordinates(coordinates, i, j))}
+                        onClickWhenPlayable={() => updateState(updateCoordinates(coordinates, i, j))}
+                        isPlayable={state.isPlayable}
                     >
                         <IconFromText text={inner} />
                     </Cell>

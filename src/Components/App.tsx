@@ -6,6 +6,7 @@ import Board from "./Board";
 
 function App() {
     const [state, setState] = useState({id: "waiting...", boardState: startState});
+    console.log(startState)
     const boardFromState = getBoardFromState(state.boardState)
     const coordinates = createCoordinates()
     const stateUpdate = (coordinates: any) =>
