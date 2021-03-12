@@ -15,7 +15,7 @@ export interface Coordinates {
     data: Coordinate[]
 }
 
-interface State {
+export interface State {
     winner: Player
     turn: Player
     board: BoardState
@@ -165,6 +165,7 @@ function isBoardFull(board: BoardState): boolean {
             board.containedItems,
             false as boolean,
             (item, value) =>
+                value ||
                 foldr(
                     item,
                     false as boolean,
@@ -185,7 +186,7 @@ function isBoardAtCoordinatesFull(coordinates: Coordinates, state: State): boole
 }
 
 function updatePlayable(playableCoordinate: Coordinate, board: BoardState, isParentPlayable = false, currentCoordinates: Coordinates = EmptyCoordinates): BoardState {
-    const isPlayable = isParentPlayable || firstCoordinate(currentCoordinates) && coordinatesEq(playableCoordinate, firstCoordinate(currentCoordinates))
+    const isPlayable = isParentPlayable || (firstCoordinate(currentCoordinates) && coordinatesEq(playableCoordinate, firstCoordinate(currentCoordinates)))
     return {
         winner: board.winner,
         isPlayable: isPlayable,
