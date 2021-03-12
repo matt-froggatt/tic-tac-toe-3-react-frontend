@@ -1,9 +1,9 @@
 import GenTable from "./GenTable";
-import {Coordinates, InnerState} from "../gameRules";
+import {Coordinates, BoardState} from "../gameRules";
 import React from "react";
 
 interface BoardProps {
-    state: InnerState
+    state: BoardState
     coordinates: Coordinates
     updateState: Function
 }

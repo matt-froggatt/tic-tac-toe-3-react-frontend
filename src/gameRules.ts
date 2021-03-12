@@ -1,9 +1,9 @@
 // Need to update game based on message
 
-export interface InnerState {
-    winner: string
+export interface BoardState {
+    winner: Player
     isPlayable: boolean
-    inner: InnerState[][] | Player[][]
+    containedItems: BoardState[][] | Player[][]
 }
 
 interface Coordinate {
@@ -16,9 +16,9 @@ export interface Coordinates {
 }
 
 interface State {
-    winner: string
-    turn: string
-    board: InnerState
+    winner: Player
+    turn: Player
+    board: BoardState
 }
 
 export enum Player {
@@ -37,11 +37,11 @@ function generateArrayOfArraysOf<T>(itemCreator: () => T, width: number, height:
     return array
 }
 
-function generateStartInnerState(levels = 2, width = 3, height = 3): InnerState {
+function generateStartInnerState(levels = 2, width = 3, height = 3): BoardState {
     return {
         winner: Player.NONE,
         isPlayable: true,
-        inner: levels === 1 ? generateArrayOfArraysOf(() => Player.NONE, width, height) : generateArrayOfArraysOf(() => generateStartInnerState(levels - 1, width, height), width, height)
+        containedItems: levels === 1 ? generateArrayOfArraysOf(() => Player.NONE, width, height) : generateArrayOfArraysOf(() => generateStartInnerState(levels - 1, width, height), width, height)
     }
 }
 
@@ -55,11 +55,11 @@ function generateStartState({levels = 2, width = 3, height = 3}): State {
 
 const startState = generateStartState({width: 3, height: 3})
 
-function whoWon(state: InnerState): any {
-    if (isBoard(state.inner)) {
+function whoWon(state: BoardState): any {
+    if (isBoard(state.containedItems)) {
         // check recursively
     } else {
-        const chars = state.inner as string[][];
+        const chars = state.containedItems as string[][];
 
         for (let i = 0; i < chars.length; ++i) {
             let rowComparator = chars[i][0]
@@ -72,39 +72,67 @@ function whoWon(state: InnerState): any {
     return state.winner;
 }
 
-function changeAtCoordinates(coordinates: Coordinates, board: InnerState, change: Function): InnerState | null {
-    const temp = coordinates.data.shift();
-    const dataItem = board.inner[temp!.x][temp!.y]
-    if (isBoard(dataItem)) {
-        const tempCell = changeAtCoordinates(coordinates, dataItem, change)
-        if (tempCell && board.winner === "") {
-            board.inner[temp!.x][temp!.y] = tempCell
-            return board;
-        } else return null
-    } else if (board.inner[temp!.x][temp!.y] === "" && board.winner === "") {
-        board.inner[temp!.x][temp!.y] = change(dataItem);
-        return board;
-    } else return null
+function first<T>(array: T[]): T {
+    return array[0];
+}
+
+function last<T>(array: T[]): T {
+    return array[array.length];
+}
+
+function rest<T>(array: T[]): T[] {
+    return array.slice(1, array.length)
+}
+
+function changeAtIndex(array: any[], value: any, index: number): any[] {
+    let newArray = array.slice()
+    newArray[index] = value
+    return newArray
+}
+
+function coordinatesFromArray(array: Coordinate[]): Coordinates {
+    return {data: array}
+}
+
+function changeAtCoordinates(coordinates: Coordinates, board: BoardState, change: Function): BoardState | false {
+    const firstCoord = first(coordinates.data);
+    const cell = board.containedItems[firstCoord.x][firstCoord.y]
+    if (isBoard(cell)) {
+        const tempCell = changeAtCoordinates(coordinatesFromArray(rest(coordinates.data)), cell, change)
+        if (tempCell) {
+            return {
+                winner: board.winner,
+                isPlayable: board.isPlayable,
+                containedItems: changeAtIndex(board.containedItems, changeAtIndex(board.containedItems[firstCoord.x], tempCell, firstCoord.y), firstCoord.x)
+            }
+        } else return false
+    } else if (board.containedItems[firstCoord.x][firstCoord.y] === "") {
+        return {
+            winner: board.winner,
+            isPlayable: board.isPlayable,
+            containedItems: changeAtIndex(board.containedItems, changeAtIndex(board.containedItems[firstCoord.x], change(cell), firstCoord.y), firstCoord.x)
+        }
+    } else return false
 }
 
 export function updateState(coordinates: Coordinates, state: State): State {
     const newBoard = changeAtCoordinates(coordinates, state.board, () => state.turn);
     return {
         winner: newBoard ? whoWon(newBoard) : state.winner, // Check winners of InnerStates
-        turn: newBoard ? state.turn === "X" ? "O" : "X" : state.turn,
+        turn: newBoard ? state.turn === Player.X ? Player.O : Player.X : state.turn,
         board: newBoard ? newBoard : state.board
     };
 }
 
-export function isBoard(state: any): state is InnerState {
+export function isBoard(state: any): state is BoardState {
     return typeof state != "string";
 }
 
-export function getBoardInfo(state: InnerState): any[][] {
-    return state.inner;
+export function getBoardInfo(state: BoardState): any[][] {
+    return state.containedItems;
 }
 
-export function getBoardFromState(state: State): InnerState {
+export function getBoardFromState(state: State): BoardState {
     return state.board;
 }
 

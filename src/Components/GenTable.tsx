@@ -1,11 +1,11 @@
-import {Coordinates, getBoardInfo, InnerState, isBoard, updateCoordinates} from "../gameRules";
+import {Coordinates, getBoardInfo, BoardState, isBoard, updateCoordinates} from "../gameRules";
 import Table from "./Table";
 import Cell from "./Cell";
 import React from "react";
 import IconFromText from "./Icons/IconFromPlayer";
 
 interface GenTableProps {
-    state: InnerState
+    state: BoardState
     coordinates: Coordinates
     updateState: any
     isParentPlayable?: boolean
