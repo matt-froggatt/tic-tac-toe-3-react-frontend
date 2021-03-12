@@ -31,7 +31,7 @@ function generateArrayOfArraysOf<T>(itemCreator: () => T, width: number, height:
     const array = Array(height)
     for (let i = 0; i < array.length; ++i) {
         const innerArray = Array(width)
-        for(let j = 0; j < innerArray.length; ++j) innerArray[j] = itemCreator()
+        for (let j = 0; j < innerArray.length; ++j) innerArray[j] = itemCreator()
         array[i] = innerArray
     }
     return array
@@ -77,7 +77,7 @@ function first<T>(array: T[]): T {
 }
 
 function last<T>(array: T[]): T {
-    return array[array.length];
+    return array[array.length - 1];
 }
 
 function rest<T>(array: T[]): T[] {
@@ -97,22 +97,63 @@ function coordinatesFromArray(array: Coordinate[]): Coordinates {
 function changeAtCoordinates(coordinates: Coordinates, board: BoardState, change: Function): BoardState | false {
     const firstCoord = first(coordinates.data);
     const cell = board.containedItems[firstCoord.x][firstCoord.y]
+    let returnValue: BoardState | false = false
     if (isBoard(cell)) {
         const tempCell = changeAtCoordinates(coordinatesFromArray(rest(coordinates.data)), cell, change)
         if (tempCell) {
-            return {
+            returnValue = {
                 winner: board.winner,
                 isPlayable: board.isPlayable,
                 containedItems: changeAtIndex(board.containedItems, changeAtIndex(board.containedItems[firstCoord.x], tempCell, firstCoord.y), firstCoord.x)
             }
-        } else return false
-    } else if (board.containedItems[firstCoord.x][firstCoord.y] === "") {
-        return {
+        }
+    } else if (board.containedItems[firstCoord.x][firstCoord.y] === Player.NONE) {
+        returnValue = {
             winner: board.winner,
             isPlayable: board.isPlayable,
             containedItems: changeAtIndex(board.containedItems, changeAtIndex(board.containedItems[firstCoord.x], change(cell), firstCoord.y), firstCoord.x)
         }
-    } else return false
+    }
+
+    return returnValue
+}
+
+const EmptyCoordinates = {data: []};
+
+function containsBoards(arrayOfArrays: any[][]): arrayOfArrays is BoardState[][] {
+    for (let array of arrayOfArrays) {
+        for (let item of array) {
+            if (!isBoard(item)) return false
+        }
+    }
+    return true
+}
+
+function firstCoordinate(coordinates: Coordinates): Coordinate {
+    return first(coordinates.data)
+}
+
+function coordinatesEq(c1: Coordinate, c2: Coordinate): boolean {
+    return c1.x === c2.x && c1.y === c2.y
+}
+
+function updatePlayable(playableCoordinate: Coordinate, board: BoardState, currentCoordinates: Coordinates = EmptyCoordinates, isParentPlayable = false): BoardState {
+    const isPlayable = isParentPlayable || firstCoordinate(currentCoordinates) && coordinatesEq(playableCoordinate, firstCoordinate(currentCoordinates))
+    console.log("playable coordinate", playableCoordinate)
+    console.log("first current coordinates", firstCoordinate(currentCoordinates))
+    if (isPlayable) console.log("PLAYABLE")
+    return {
+        winner: board.winner,
+        isPlayable: isPlayable,
+        containedItems: containsBoards(board.containedItems) ?
+            board.containedItems.map(
+                (array, x) =>
+                    array.map(
+                        (item, y) =>
+                            updatePlayable(playableCoordinate, item, updateCoordinates(currentCoordinates, x, y), isPlayable)
+                    )
+            ) : board.containedItems
+    }
 }
 
 export function updateState(coordinates: Coordinates, state: State): State {
@@ -120,7 +161,7 @@ export function updateState(coordinates: Coordinates, state: State): State {
     return {
         winner: newBoard ? whoWon(newBoard) : state.winner, // Check winners of InnerStates
         turn: newBoard ? state.turn === Player.X ? Player.O : Player.X : state.turn,
-        board: newBoard ? newBoard : state.board
+        board: newBoard ? updatePlayable(last(coordinates.data), newBoard) : state.board
     };
 }
 
