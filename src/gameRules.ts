@@ -120,7 +120,7 @@ function changeAtCoordinates(coordinates: Coordinates, board: BoardState, change
 
 const EmptyCoordinates = {data: []};
 
-function containsBoards(arrayOfArrays: any[][]): arrayOfArrays is BoardState[][] {
+function isArrayOfBoardArray(arrayOfArrays: any[][]): arrayOfArrays is BoardState[][] {
     for (let array of arrayOfArrays) {
         for (let item of array) {
             if (!isBoard(item)) return false
@@ -133,24 +133,68 @@ function firstCoordinate(coordinates: Coordinates): Coordinate {
     return first(coordinates.data)
 }
 
+function restCoordinates(coordinates: Coordinates): Coordinates {
+    return {data: rest(coordinates.data)}
+}
+
 function coordinatesEq(c1: Coordinate, c2: Coordinate): boolean {
     return c1.x === c2.x && c1.y === c2.y
 }
 
-function updatePlayable(playableCoordinate: Coordinate, board: BoardState, currentCoordinates: Coordinates = EmptyCoordinates, isParentPlayable = false): BoardState {
+// TODO make full everything playable when selected square is full
+
+function isAnyEmpty(squares: Player[][]): boolean {
+    for (const array of squares) {
+        for (const square of array) {
+            if (square === Player.NONE) return true
+        }
+    }
+    return false
+}
+
+function foldr<T, S>(array: T[], start: S, func: (item: T, value: S) => S): S {
+    if (array.length === 0) {
+        return start
+    }
+    return func(first(array), foldr(rest(array), start, func))
+}
+
+function isBoardFull(board: BoardState): boolean {
+    return isArrayOfBoardArray(board.containedItems) ?
+        foldr(
+            board.containedItems,
+            false as boolean,
+            (item, value) =>
+                foldr(
+                    item,
+                    false as boolean,
+                    (item, value) =>
+                        value || isBoardFull(item)
+                )
+        ) : isAnyEmpty(board.containedItems)
+}
+
+function getBoardAtCoordinates(coordinates: Coordinates, board: BoardState): BoardState {
+    const firstCoord = firstCoordinate(coordinates)
+    return coordinates === EmptyCoordinates || !isArrayOfBoardArray(board.containedItems) ?
+        board : getBoardAtCoordinates(restCoordinates(coordinates), board.containedItems[firstCoord.x][firstCoord.y])
+}
+
+function isBoardAtCoordinatesFull(coordinates: Coordinates, state: State): boolean {
+    return isBoardFull(getBoardAtCoordinates(coordinates, getBoardFromState(state)))
+}
+
+function updatePlayable(playableCoordinate: Coordinate, board: BoardState, isParentPlayable = false, currentCoordinates: Coordinates = EmptyCoordinates): BoardState {
     const isPlayable = isParentPlayable || firstCoordinate(currentCoordinates) && coordinatesEq(playableCoordinate, firstCoordinate(currentCoordinates))
-    console.log("playable coordinate", playableCoordinate)
-    console.log("first current coordinates", firstCoordinate(currentCoordinates))
-    if (isPlayable) console.log("PLAYABLE")
     return {
         winner: board.winner,
         isPlayable: isPlayable,
-        containedItems: containsBoards(board.containedItems) ?
+        containedItems: isArrayOfBoardArray(board.containedItems) ?
             board.containedItems.map(
                 (array, x) =>
                     array.map(
                         (item, y) =>
-                            updatePlayable(playableCoordinate, item, updateCoordinates(currentCoordinates, x, y), isPlayable)
+                            updatePlayable(playableCoordinate, item, isPlayable, updateCoordinates(currentCoordinates, x, y))
                     )
             ) : board.containedItems
     }
@@ -161,7 +205,7 @@ export function updateState(coordinates: Coordinates, state: State): State {
     return {
         winner: newBoard ? whoWon(newBoard) : state.winner, // Check winners of InnerStates
         turn: newBoard ? state.turn === Player.X ? Player.O : Player.X : state.turn,
-        board: newBoard ? updatePlayable(last(coordinates.data), newBoard) : state.board
+        board: newBoard ? updatePlayable(last(coordinates.data), newBoard, !isBoardAtCoordinatesFull({data: [last(coordinates.data)]}, state)) : state.board
     };
 }
 
