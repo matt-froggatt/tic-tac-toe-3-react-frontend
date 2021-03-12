@@ -2,7 +2,7 @@ import {Coordinates, getBoardInfo, InnerState, isBoard, updateCoordinates} from 
 import Table from "./Table";
 import Cell from "./Cell";
 import React from "react";
-import IconFromText from "./Icons/IconFromText";
+import IconFromText from "./Icons/IconFromPlayer";
 
 interface GenTableProps {
     state: InnerState
@@ -31,7 +31,7 @@ const GenTable: React.FC<GenTableProps> = (
                         onClickWhenPlayable={() => updateState(updateCoordinates(coordinates, i, j))}
                         isPlayable={state.isPlayable}
                     >
-                        <IconFromText text={inner} />
+                        <IconFromText player={inner} />
                     </Cell>
                 )
             )
