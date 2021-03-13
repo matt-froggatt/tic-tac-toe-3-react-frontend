@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import startState, {createCoordinates, getBoardFromState, Player, State, updateState,} from "../gameRules";
+import startState, {createCoordinates, getBoardFromState, State, updateState,} from "../gameRules";
 import Board from "./Board";
 import CurrentPlayer from "./CurrentPlayer";
 import Winner from "./Winner";

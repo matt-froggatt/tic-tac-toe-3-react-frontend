@@ -1,7 +1,6 @@
 import React from "react";
 import {Player} from "../gameRules";
 import IconFromPlayer from "./Icons/IconFromPlayer";
-import Modal from "./Modal";
 import StyledModal from "./StyledModal";
 
 interface WinnerProps {
