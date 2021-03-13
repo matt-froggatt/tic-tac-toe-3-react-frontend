@@ -18,7 +18,7 @@ function App() {
     const boardFromState = getBoardFromState(gameState.boardState)
     const coordinates = createCoordinates()
     const stateUpdate = (coordinates: any) =>
-        setGameState({ ...gameState, boardState: updateState(coordinates, gameState.boardState) })
+        setGameState({...gameState, boardState: updateState(coordinates, gameState.boardState)})
 
     const playAgain = () => setGameState({...gameState, boardState: startState})
 
@@ -30,15 +30,19 @@ function App() {
     }, [])
 
     return (
-        <div className="flex flex-col items-center justify-center">
-            <IdModal id={gameState.id} onIdSubmit={() => {setGameState({...gameState, gameStarted: true})}} gameStarted={gameState.gameStarted} />
+        <div className="flex flex-row items-center justify-center w-screen h-screen overflow-hidden">
+            <div className="flex flex-col items-center justify-center">
+                <Board
+                    state={boardFromState}
+                    coordinates={coordinates}
+                    updateState={stateUpdate}
+                />
+                <CurrentPlayer currentPlayer={gameState.boardState.turn}/>
+            </div>
+            <IdModal id={gameState.id} onIdSubmit={() => {
+                setGameState({...gameState, gameStarted: true})
+            }} gameStarted={gameState.gameStarted}/>
             <WinnerModal winner={gameState.boardState.winner} onPlayAgain={playAgain}/>
-            <Board
-                state={boardFromState}
-                coordinates={coordinates}
-                updateState={stateUpdate}
-            />
-            <CurrentPlayer currentPlayer={gameState.boardState.turn}/>
         </div>
     );
 }
