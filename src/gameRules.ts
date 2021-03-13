@@ -55,23 +55,6 @@ function generateStartState({levels = 2, width = 3, height = 3}): State {
 
 const startState = generateStartState({width: 3, height: 3})
 
-function whoWon(state: BoardState): any {
-    if (isBoard(state.containedItems)) {
-        // check recursively
-    } else {
-        const chars = state.containedItems as string[][];
-
-        for (let i = 0; i < chars.length; ++i) {
-            let rowComparator = chars[i][0]
-            for (let j = 0; j < chars[i].length; ++j) {
-
-            }
-            if (rowComparator !== "") return rowComparator;
-        }
-    }
-    return state.winner;
-}
-
 function first<T>(array: T[]): T {
     return array[0];
 }
@@ -201,13 +184,140 @@ function updatePlayable(playableCoordinate: Coordinate, board: BoardState, isPar
     }
 }
 
+function push<T>(array: T[], item: T): T[] {
+    const newArray = array.slice()
+    newArray.push(item)
+    return newArray
+}
+
+function arrayUnzip<A, B>(array: [A, B][]): [A[], B[]] {
+    const [a, b] = first(array)
+
+    if (array.length === 0) {
+        return [[a], [b]]
+    }
+
+    const [newArrayA, newArrayB] = arrayUnzip(rest(array))
+    return [push(newArrayA, a), push(newArrayB, b)]
+}
+
+function min(a: number, b: number): number {
+    return a < b ? a : b
+}
+
+function getWinnerOfCell(item: BoardState | Player): Player {
+    return isBoard(item) ? winnerOfBoard(item.containedItems) : item
+}
+
+function verticalWinner(board: BoardState[][] | Player[][], column: number): Player {
+    let prevWinner = null
+
+    for(let i = 0; i < board.length; ++i) {
+        const currentWinner = getWinnerOfCell(board[i][column])
+        if (prevWinner !== null && currentWinner !== prevWinner) return Player.NONE
+        prevWinner = currentWinner
+    }
+
+    return prevWinner || Player.NONE
+}
+
+function horizontalWinner(board: BoardState[][] | Player[][], row: number): Player {
+    let prevWinner = null
+    const array = board[row]
+
+    for(let i = 0; i < array.length; ++i) {
+        const currentWinner = getWinnerOfCell(array[i])
+        if (prevWinner !== null && currentWinner !== prevWinner) return Player.NONE
+        prevWinner = currentWinner
+    }
+
+    return prevWinner || Player.NONE
+}
+
+function antiDiagonalWinner(board: BoardState[][] | Player[][]): Player {
+    let prevWinner = null
+
+    const size = min(board.length, board[0].length);
+
+    for(let i = 0; i < size; ++i) {
+        const currentWinner = getWinnerOfCell(board[i][board[i].length - 1 - i])
+        if (prevWinner != null && currentWinner !== prevWinner) return Player.NONE
+        prevWinner = currentWinner
+    }
+
+    return prevWinner || Player.NONE
+}
+
+function diagonalWinner(board: BoardState[][] | Player[][]): Player {
+    let prevWinner = null
+
+    const size = min(board.length, board[0].length);
+
+    for(let i = 0; i < size; ++i) {
+        const currentWinner = getWinnerOfCell(board[i][i])
+        if (prevWinner !== null && currentWinner !== prevWinner) return Player.NONE
+        prevWinner = currentWinner
+    }
+
+    return prevWinner || Player.NONE
+}
+
+function winnerOfBoard(board: BoardState[][] | Player[][]): Player {
+    for(let i = 0; i < board.length; ++i) {
+        const tempHorizontalWinner = horizontalWinner(board, i)
+        if (tempHorizontalWinner !== Player.NONE) return tempHorizontalWinner
+    }
+
+    for(let i = 0; i < board[0].length; ++i) {
+        const tempVerticalWinner = verticalWinner(board, i)
+        if (tempVerticalWinner !== Player.NONE) return tempVerticalWinner
+    }
+
+    const tempDiagonalWinner = diagonalWinner(board)
+    if (tempDiagonalWinner !== Player.NONE) return tempDiagonalWinner
+
+    const tempAntiDiagonalWinner = antiDiagonalWinner(board)
+    if (tempAntiDiagonalWinner !== Player.NONE) return tempAntiDiagonalWinner
+
+    return Player.NONE
+}
+
+function updateWinner(board: BoardState): BoardState {
+    if (board.winner === Player.NONE) {
+        const contents = board.containedItems
+        const newContents = isArrayOfBoardArray(contents) ? contents.map(
+            array =>
+                array.map(
+                    item =>
+                        updateWinner(item)
+                )
+        ) : contents
+
+        return {
+            ...board,
+            winner: winnerOfBoard(newContents),
+            containedItems: newContents
+        }
+    }
+
+    return board
+}
+
 export function updateState(coordinates: Coordinates, state: State): State {
     const newBoard = changeAtCoordinates(coordinates, state.board, () => state.turn);
-    return {
-        winner: newBoard ? whoWon(newBoard) : state.winner, // Check winners of InnerStates
+    let winnerUpdatedBoard
+
+    if (newBoard) winnerUpdatedBoard = updateWinner(newBoard)
+
+    const updatedState = {
+        winner: newBoard && winnerUpdatedBoard ? winnerUpdatedBoard.winner : state.winner, // Check winners of InnerStates
         turn: newBoard ? state.turn === Player.X ? Player.O : Player.X : state.turn,
-        board: newBoard ? updatePlayable(last(coordinates.data), newBoard, !isBoardAtCoordinatesFull({data: [last(coordinates.data)]}, state)) : state.board
-    };
+        board: newBoard && winnerUpdatedBoard ? updatePlayable(last(coordinates.data), winnerUpdatedBoard, !isBoardAtCoordinatesFull({data: [last(coordinates.data)]}, state)) : state.board
+    }
+
+    console.log(updatedState)
+
+    return updatedState
 }
 
 export function isBoard(state: any): state is BoardState {
