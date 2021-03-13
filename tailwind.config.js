@@ -6,7 +6,8 @@ module.exports = {
   },
   variants: {
     extend: {
-      borderStyle: ["first"]
+      borderStyle: ["first"],
+      backgroundColor: ['active'],
     },
   },
   plugins: [],
