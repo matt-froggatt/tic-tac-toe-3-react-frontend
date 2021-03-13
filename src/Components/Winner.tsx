@@ -8,9 +8,11 @@ interface WinnerProps {
 
 const Winner: React.FC<WinnerProps> = ({winner}) =>
     winner !== Player.NONE ?
-        <div>
-            <IconFromPlayer player={winner}/>
-            <p> has won!</p>
+        <div className='flex flex-row items-center'>
+            <div className='w-6 h-6'>
+                <IconFromPlayer player={winner}/>
+            </div>
+            <p className='font-bold'> has won!</p>
         </div>
         : null
 
