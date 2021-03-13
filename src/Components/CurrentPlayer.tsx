@@ -8,8 +8,8 @@ interface CurrentPlayerProps {
 
 const CurrentPlayer: React.FC<CurrentPlayerProps> = ({ currentPlayer }) =>
     <div className='flex flex-row items-center'>
-        <p className='font-bold'>Turn: </p>
-        <div className='w-6 h-6'>
+        <p className='text-3xl'>You are: </p>
+        <div className='w-12 h-12'>
             <IconFromPlayer player={currentPlayer}/>
         </div>
     </div>

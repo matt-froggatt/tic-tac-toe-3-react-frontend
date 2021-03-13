@@ -32,17 +32,13 @@ function App() {
     return (
         <div className="flex flex-col items-center justify-center">
             <h1>Your ID is: {gameState.id}</h1>
-            <Winner winner={gameState.boardState.winner} />
-            <div className="flex flex-col items-center justify-center">
-                <Board
-                    state={boardFromState}
-                    coordinates={coordinates}
-                    updateState={stateUpdate}
-                />
-                <div className='pl-4 self-start'>
-                    <CurrentPlayer currentPlayer={gameState.boardState.turn} />
-                </div>
-            </div>
+            <Winner winner={gameState.boardState.winner}/>
+            <Board
+                state={boardFromState}
+                coordinates={coordinates}
+                updateState={stateUpdate}
+            />
+            <CurrentPlayer currentPlayer={gameState.boardState.turn}/>
         </div>
     );
 }
