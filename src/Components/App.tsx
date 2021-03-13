@@ -13,7 +13,6 @@ interface AppState {
 
 function App() {
     const [gameState, setGameState] = useState<AppState>({id: "waiting...", boardState: startState});
-    console.log(startState)
     const boardFromState = getBoardFromState(gameState.boardState)
     const coordinates = createCoordinates()
     const stateUpdate = (coordinates: any) =>
@@ -23,7 +22,7 @@ function App() {
         })
 
     useEffect(() => {
-        console.log("wowee")
+        // console.log("wowee")
         // const websocket = new WebSocket("ws://" + URL + "/ws")
         // websocket.onopen = () => websocket.send("id")
         // websocket.onmessage = msg => setState({ id: msg.data, boardState: gameState.boardState })
