@@ -2,6 +2,7 @@ import React from "react";
 import {Player} from "../gameRules";
 import IconFromPlayer from "./Icons/IconFromPlayer";
 import StyledModal from "./StyledModal";
+import GoodButton from "./GoodButton";
 
 interface WinnerProps {
     winner: Player
@@ -18,10 +19,7 @@ const WinnerModal: React.FC<WinnerProps> = ({winner, onPlayAgain}) =>
                     </div>
                     <p className='font-bold'> has won!</p>
                 </div>
-                <button
-                    className='bg-green-500 rounded text-white hover:text-white p-1 hover:bg-green-600 active:bg-green-800'
-                    onClick={onPlayAgain}>Play again? ↻
-                </button>
+                <GoodButton onClick={onPlayAgain}>Play again? ↻</GoodButton>
             </div>
         </StyledModal>
         : null
