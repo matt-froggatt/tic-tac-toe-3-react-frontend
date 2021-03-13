@@ -8,7 +8,7 @@ interface WinnerProps {
     onPlayAgain: () => void
 }
 
-const Winner: React.FC<WinnerProps> = ({winner, onPlayAgain}) =>
+const WinnerModal: React.FC<WinnerProps> = ({winner, onPlayAgain}) =>
     winner !== Player.NONE ?
         <StyledModal>
             <div className='flex flex-col items-center'>
@@ -26,4 +26,4 @@ const Winner: React.FC<WinnerProps> = ({winner, onPlayAgain}) =>
         </StyledModal>
         : null
 
-export default Winner
+export default WinnerModal

@@ -2,7 +2,7 @@ import React, {useEffect, useState} from "react";
 import startState, {createCoordinates, getBoardFromState, State, updateState,} from "../gameRules";
 import Board from "./Board";
 import CurrentPlayer from "./CurrentPlayer";
-import Winner from "./Winner";
+import WinnerModal from "./WinnerModal";
 
 // const URL = window.location.hostname + ":5000"
 
@@ -33,7 +33,7 @@ function App() {
     return (
         <div className="flex flex-col items-center justify-center">
             <h1>Your ID is: {gameState.id}</h1>
-            <Winner winner={gameState.boardState.winner} onPlayAgain={playAgain}/>
+            <WinnerModal winner={gameState.boardState.winner} onPlayAgain={playAgain}/>
             <Board
                 state={boardFromState}
                 coordinates={coordinates}
