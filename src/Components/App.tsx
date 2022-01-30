@@ -5,7 +5,7 @@ import CurrentPlayer from "./CurrentPlayer";
 import WinnerModal from "./WinnerModal";
 import IdModal from "./IdModal";
 
-// const URL = window.location.hostname + ":5000"
+const URL = window.location.hostname + ":8080"
 
 interface AppState {
     id: number
@@ -23,10 +23,24 @@ function App() {
     const playAgain = () => setGameState({...gameState, boardState: startState})
 
     useEffect(() => {
-        // console.log("wowee")
-        // const websocket = new WebSocket("ws://" + URL + "/ws")
-        // websocket.onopen = () => websocket.send("id")
-        // websocket.onmessage = msg => setState({ id: msg.data, boardState: gameState.boardState })
+        let socket = new WebSocket("ws://127.0.0.1:8080/ws");
+        console.log("Attempting Connection...");
+
+        socket.onopen = () => {
+            console.log("Successfully Connected");
+            socket.send("Hi From the Client!")
+        };
+        
+        socket.onmessage = msg => console.log(msg.data)
+
+        socket.onclose = event => {
+            console.log("Socket Closed Connection: ", event);
+            socket.send("Client Closed!")
+        };
+
+        socket.onerror = error => {
+            console.log("Socket Error: ", error);
+        };
     }, [])
 
     return (
