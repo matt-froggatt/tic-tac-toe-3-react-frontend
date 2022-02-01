@@ -17,9 +17,9 @@ const WinnerModal: React.FC<WinnerProps> = ({winner, onPlayAgain}) =>
                     <div className='w-6 h-6'>
                         <IconFromPlayer player={winner}/>
                     </div>
-                    <p className='font-bold'> has won!</p>
+                    <p className='font-bold text-xl'> has won!</p>
                 </div>
-                <GoodButton onClick={onPlayAgain}>Play again? ↻</GoodButton>
+                <GoodButton onClick={onPlayAgain}>Play again?</GoodButton>
             </div>
         </StyledModal>
         : null
