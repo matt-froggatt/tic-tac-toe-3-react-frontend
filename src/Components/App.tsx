@@ -7,20 +7,16 @@ import IdModal from "./Modal/IdModal";
 
 const URL = window.location.hostname + ":8080"
 
-interface AppState {
-    id: number
-    gameStarted: boolean
-    boardState: State
-}
-
 function App() {
-    const [gameState, setGameState] = useState<AppState>({id: 1234, gameStarted: false, boardState: startState});
-    const boardFromState = getBoardFromState(gameState.boardState)
+    const [id, ] = useState<number>()
+    const [gameStarted, setGameStarted] = useState<boolean>(false)
+    const [boardState, setBoardState] = useState<State>(startState)
+    const boardFromState = getBoardFromState(boardState)
     const coordinates = createCoordinates()
     const stateUpdate = (coordinates: any) =>
-        setGameState({...gameState, boardState: updateState(coordinates, gameState.boardState)})
+        setBoardState(updateState(coordinates, boardState))
 
-    const playAgain = () => setGameState({...gameState, boardState: startState})
+    const playAgain = () => setBoardState(startState)
 
     useEffect(() => {
         let socket = new WebSocket(`ws://${URL}/ws`);
@@ -51,12 +47,12 @@ function App() {
                     coordinates={coordinates}
                     updateState={stateUpdate}
                 />
-                <CurrentPlayer currentPlayer={gameState.boardState.turn}/>
+                <CurrentPlayer currentPlayer={boardState.turn}/>
             </div>
-            <IdModal id={gameState.id} onIdSubmit={() => {
-                setGameState({...gameState, gameStarted: true})
-            }} gameStarted={gameState.gameStarted}/>
-            <WinnerModal winner={gameState.boardState.winner} onPlayAgain={playAgain}/>
+            <IdModal id={id} onIdSubmit={() => {
+                setGameStarted(true)
+            }} gameStarted={gameStarted}/>
+            <WinnerModal winner={boardState.winner} onPlayAgain={playAgain}/>
         </div>
     );
 }
