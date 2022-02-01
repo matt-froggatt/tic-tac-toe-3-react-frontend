@@ -27,7 +27,7 @@ const IdModal: React.FC<IDModalProps> = ({id, onIdSubmit, gameStarted}) => {
                         className='border-b-2 border-black w-3/4'
                         placeholder="Enter friend's ID here"
                         type="number"
-                        onChange={(e) => setEnteredValue(parseInt(e.target.value))}
+                        onChange={R.pipe(R.pathOr('err',['target', 'value']), parseInt, setEnteredValue)}
                     />
                     <GoodButton onClick={() => onIdSubmit(enteredValue)}>Go!</GoodButton>
                 </div>
