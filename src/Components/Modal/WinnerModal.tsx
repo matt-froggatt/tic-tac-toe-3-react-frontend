@@ -1,8 +1,8 @@
 import React from "react";
-import {Player} from "../gameRules";
-import IconFromPlayer from "./Icons/IconFromPlayer";
+import {Player} from "../../gameRules";
+import IconFromPlayer from "../Icons/IconFromPlayer";
 import StyledModal from "./StyledModal";
-import GoodButton from "./GoodButton";
+import GoodButton from "../Library/GoodButton";
 
 interface WinnerProps {
     winner: Player

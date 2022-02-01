@@ -1,6 +1,6 @@
 import React, {useState} from "react"
 import StyledModal from "./StyledModal";
-import GoodButton from "./GoodButton";
+import GoodButton from "../Library/GoodButton";
 
 interface IDModalProps {
     id: number

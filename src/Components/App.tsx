@@ -1,9 +1,9 @@
 import React, {useEffect, useState} from "react";
 import startState, {createCoordinates, getBoardFromState, State, updateState,} from "../gameRules";
-import Board from "./Board";
-import CurrentPlayer from "./CurrentPlayer";
-import WinnerModal from "./WinnerModal";
-import IdModal from "./IdModal";
+import Board from "./Board/Board";
+import CurrentPlayer from "./Board/CurrentPlayer";
+import WinnerModal from "./Modal/WinnerModal";
+import IdModal from "./Modal/IdModal";
 
 const URL = window.location.hostname + ":8080"
 

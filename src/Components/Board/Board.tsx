@@ -1,5 +1,5 @@
 import GenTable from "./GenTable";
-import {Coordinates, BoardState} from "../gameRules";
+import {Coordinates, BoardState} from "../../gameRules";
 import React from "react";
 
 interface BoardProps {

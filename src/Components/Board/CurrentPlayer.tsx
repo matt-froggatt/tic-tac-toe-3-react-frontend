@@ -1,6 +1,6 @@
 import React from "react";
-import {Player} from "../gameRules";
-import IconFromPlayer from "./Icons/IconFromPlayer";
+import {Player} from "../../gameRules";
+import IconFromPlayer from "../Icons/IconFromPlayer";
 
 interface CurrentPlayerProps {
     currentPlayer: Player
