@@ -184,23 +184,6 @@ function updatePlayable(playableCoordinate: Coordinate, board: BoardState, isPar
     }
 }
 
-function push<T>(array: T[], item: T): T[] {
-    const newArray = array.slice()
-    newArray.push(item)
-    return newArray
-}
-
-function arrayUnzip<A, B>(array: [A, B][]): [A[], B[]] {
-    const [a, b] = first(array)
-
-    if (array.length === 0) {
-        return [[a], [b]]
-    }
-
-    const [newArrayA, newArrayB] = arrayUnzip(rest(array))
-    return [push(newArrayA, a), push(newArrayB, b)]
-}
-
 function min(a: number, b: number): number {
     return a < b ? a : b
 }
