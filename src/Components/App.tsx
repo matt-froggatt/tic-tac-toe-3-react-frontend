@@ -24,33 +24,35 @@ const useBoard: () => [BoardState, Player, Player, (c: Coordinates) => void, () 
     return [board, winner, turn, playAtCoordinates, playAgain]
 }
 
+const connectToWebSocket = () => {
+    let socket = new WebSocket(`ws://${URL}/ws`);
+    console.log("Attempting Connection...");
+
+    socket.onopen = () => {
+        console.log("Successfully Connected");
+        socket.send("Hi From the Client!")
+    };
+
+    socket.onmessage = msg => console.log(msg.data)
+
+    socket.onclose = event => {
+        console.log("Socket Closed Connection: ", event);
+        socket.send("Client Closed!")
+    };
+
+    socket.onerror = error => {
+        console.log("Socket Error: ", error);
+    };
+}
+
+const coordinates = createCoordinates()
+
 function App() {
     const [id, ] = useState<number>()
     const [gameStarted, setGameStarted] = useState<boolean>(false)
     const [board, winner, turn, playAtCoordinates, playAgain] = useBoard()
 
-    const coordinates = createCoordinates()
-
-    useEffect(() => {
-        let socket = new WebSocket(`ws://${URL}/ws`);
-        console.log("Attempting Connection...");
-
-        socket.onopen = () => {
-            console.log("Successfully Connected");
-            socket.send("Hi From the Client!")
-        };
-        
-        socket.onmessage = msg => console.log(msg.data)
-
-        socket.onclose = event => {
-            console.log("Socket Closed Connection: ", event);
-            socket.send("Client Closed!")
-        };
-
-        socket.onerror = error => {
-            console.log("Socket Error: ", error);
-        };
-    }, [])
+    useEffect(connectToWebSocket, [])
 
     return (
         <div className="flex flex-row items-center justify-center w-screen h-screen overflow-hidden">
