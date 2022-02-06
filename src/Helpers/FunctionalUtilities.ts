@@ -8,3 +8,6 @@ export const log = (...args: any[]) => <T>(data: T) => R.tap(() => console.log(.
 // function on that data and logs the result, and finally returns the generic data unchanged. For logging data in
 // functions.
 export const logData = <T>(transform: (data: T) => any, ...args: any[]) => (data: T) => R.tap(() => console.log(...args, transform(data)), data)
+
+// Does nothing
+export const noOp = () => {}
