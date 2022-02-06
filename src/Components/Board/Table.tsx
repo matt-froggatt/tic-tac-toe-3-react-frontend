@@ -4,7 +4,7 @@ import SelectBox from "./SelectBox";
 import {mapIndexed} from "../../Helpers/FunctionalUtilities";
 
 interface TableProps {
-    children: any[]
+    children: React.ReactNode[]
     isPlayable: boolean
     isParentPlayable: boolean
 }
