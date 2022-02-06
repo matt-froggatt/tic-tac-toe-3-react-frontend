@@ -72,7 +72,6 @@ function App() {
                 setGameStarted(true)
             }} gameStarted={gameStarted}/>
             <WinnerModal winner={winner} onPlayAgain={playAgain}/>
-            <button onClick={() => socket.close()}> test </button>
         </div>
     );
 }
