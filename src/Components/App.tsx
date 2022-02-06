@@ -11,6 +11,9 @@ import Board from "./Board/Board";
 import CurrentPlayer from "./Board/CurrentPlayer";
 import WinnerModal from "./Modal/WinnerModal";
 import IdModal from "./Modal/IdModal";
+import * as R from "ramda";
+import * as ws from "../Helpers/FunctionalWebSockets";
+import * as utils from "../Helpers/FunctionalUtilities"
 
 const URL = window.location.hostname + ":8080"
 
@@ -24,35 +27,35 @@ const useBoard: () => [BoardState, Player, Player, (c: Coordinates) => void, () 
     return [board, winner, turn, playAtCoordinates, playAgain]
 }
 
-const connectToWebSocket = () => {
-    let socket = new WebSocket(`ws://${URL}/ws`);
-    console.log("Attempting Connection...");
-
-    socket.onopen = () => {
-        console.log("Successfully Connected");
-        socket.send("Hi From the Client!")
-    };
-
-    socket.onmessage = msg => console.log(msg.data)
-
-    socket.onclose = event => {
-        console.log("Socket Closed Connection: ", event);
-        socket.send("Client Closed!")
-    };
-
-    socket.onerror = error => {
-        console.log("Socket Error: ", error);
-    };
-}
+const connectToWebSocket = R.pipe(
+    ws.create,
+    utils.log("Attempting Connection..."),
+    ws.onOpen(
+        R.pipe(
+            utils.log("Successfully Connected"),
+            ws.send("Hi From the Client!")
+        )
+    ),
+    ws.onMessage((utils.logData(msg => [ws.event(msg).data]))),
+    ws.onClose(
+        R.pipe(
+            utils.logData(data => [`Socket Closed Connection:`, ws.event(data)]),
+            ws.send("Client Closed!")
+        )
+    ),
+    ws.onError(utils.logData(error => ["Socket Error: ", ws.event(error)]))
+)
 
 const coordinates = createCoordinates()
 
 function App() {
-    const [id, ] = useState<number>()
+    const [id,] = useState<number>()
     const [gameStarted, setGameStarted] = useState<boolean>(false)
     const [board, winner, turn, playAtCoordinates, playAgain] = useBoard()
 
-    useEffect(connectToWebSocket, [])
+    useEffect(() => {
+        connectToWebSocket(URL)
+    })
 
     return (
         <div className="flex flex-row items-center justify-center w-screen h-screen overflow-hidden">
