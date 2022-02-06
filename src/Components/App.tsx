@@ -17,17 +17,18 @@ import * as utils from "../Helpers/FunctionalUtilities"
 
 const URL = window.location.hostname + ":8080"
 
-const useBoard: () => [BoardState, Player, Player, (c: Coordinates) => void, () => void] = () => {
-    const [state, setState] = useState<State>(startState)
-    const playAtCoordinates = (coordinates: Coordinates) => setState(updateState(coordinates, state))
-    const playAgain = () => setState(startState)
-    const board = getBoardFromState(state)
-    const turn = state.turn
-    const winner = state.winner
-    return [board, winner, turn, playAtCoordinates, playAgain]
-}
-
 const socket = ws.create(URL)
+
+const useBoard = (): [BoardState, Player, Player, (c: Coordinates) => void, () => void] => {
+    const [state, setState] = useState<State>(startState)
+    return [
+        getBoardFromState(state),
+        state.winner,
+        state.turn,
+        (coordinates: Coordinates) => setState(updateState(coordinates, state)),
+        () => setState(startState)
+    ]
+}
 
 const connectToWebSocket = R.pipe(
     utils.log("Attempting Connection..."),
