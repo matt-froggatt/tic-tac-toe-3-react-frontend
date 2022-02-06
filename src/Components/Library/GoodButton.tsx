@@ -1,7 +1,7 @@
 import React from "react";
 
 interface GoodButtonProps {
-    children: any
+    children: React.ReactNode
     onClick: () => void
 }
 
