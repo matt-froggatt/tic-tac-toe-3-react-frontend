@@ -10,9 +10,11 @@ interface WinnerProps {
     onPlayAgain: () => void
 }
 
+const WINNER: keyof WinnerProps = 'winner'
+
 const WinnerModal: React.FC<WinnerProps> =
     R.ifElse(
-        R.propEq('winner', Player.NONE),
+        R.propEq(WINNER, Player.NONE),
         R.always(null),
         ({winner, onPlayAgain}: WinnerProps) => (
             <Modal>
