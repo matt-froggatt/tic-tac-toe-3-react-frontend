@@ -1,9 +1,9 @@
 import * as R from 'ramda'
 import React from "react";
-import {Player} from "../../gameRules";
-import IconFromPlayer from "../Icons/IconFromPlayer";
-import Modal from "./Modal";
-import GoodButton from "../Library/GoodButton";
+import {Player} from "../gameRules";
+import IconFromPlayer from "./Icons/IconFromPlayer";
+import Modal from "./Library/Modal";
+import GoodButton from "./Library/GoodButton";
 
 interface WinnerProps {
     winner: Player

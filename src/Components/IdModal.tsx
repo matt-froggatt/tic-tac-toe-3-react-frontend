@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react"
 import * as R from 'ramda'
-import Modal from "./Modal";
-import GoodButton from "../Library/GoodButton";
+import Modal from "./Library/Modal";
+import GoodButton from "./Library/GoodButton";
 
 interface IDModalProps {
     id?: number

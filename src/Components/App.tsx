@@ -9,8 +9,8 @@ import startState, {
 } from "../gameRules";
 import Board from "./Board/Board";
 import CurrentPlayer from "./Board/CurrentPlayer";
-import WinnerModal from "./Modal/WinnerModal";
-import IdModal from "./Modal/IdModal";
+import WinnerModal from "./WinnerModal";
+import IdModal from "./IdModal";
 import * as R from "ramda";
 import * as ws from "../Helpers/FunctionalWebSockets";
 import * as utils from "../Helpers/FunctionalUtilities"
