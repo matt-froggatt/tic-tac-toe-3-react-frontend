@@ -5,7 +5,7 @@ import React from "react";
 interface BoardProps {
     state: BoardState
     coordinates: Coordinates
-    updateState: Function
+    updateState: (c: Coordinates) => void
 }
 
 const Board: React.FC<BoardProps> = (

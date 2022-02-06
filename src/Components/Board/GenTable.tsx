@@ -9,7 +9,7 @@ import * as R from "ramda";
 interface GenTableProps {
     state: BoardState
     coordinates: Coordinates
-    updateState: any
+    updateState: (c: Coordinates) => void
     isParentPlayable?: boolean
 }
 
