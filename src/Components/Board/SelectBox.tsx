@@ -2,7 +2,7 @@ import * as R from 'ramda'
 import React from "react";
 
 interface SelectBoxProps {
-    children: any
+    children: React.ReactNode
     isSelected: boolean
 }
 
