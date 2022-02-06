@@ -2,7 +2,7 @@ import * as R from 'ramda'
 import React from "react";
 import {Player} from "../../gameRules";
 import IconFromPlayer from "../Icons/IconFromPlayer";
-import StyledModal from "./StyledModal";
+import Modal from "./Modal";
 import GoodButton from "../Library/GoodButton";
 
 interface WinnerProps {
@@ -15,7 +15,7 @@ const WinnerModal: React.FC<WinnerProps> =
         R.propEq('winner', Player.NONE),
         R.always(null),
         ({winner, onPlayAgain}: WinnerProps) => (
-            <StyledModal>
+            <Modal>
                 <div className='flex flex-col items-center'>
                     <div className='flex flex-row items-center justify-center pb-2'>
                         <div className='w-6 h-6'>
@@ -25,7 +25,7 @@ const WinnerModal: React.FC<WinnerProps> =
                     </div>
                     <GoodButton onClick={onPlayAgain}>Play again?</GoodButton>
                 </div>
-            </StyledModal>
+            </Modal>
         )
     )
 

@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react"
 import * as R from 'ramda'
-import StyledModal from "./StyledModal";
+import Modal from "./Modal";
 import GoodButton from "../Library/GoodButton";
 
 interface IDModalProps {
@@ -19,7 +19,7 @@ const IdModal: React.FC<IDModalProps> = ({id, onIdSubmit, gameStarted}) => {
         R.always(gameStarted),
         R.always(null),
         ({id, onIdSubmit}: IDModalProps) => (
-            <StyledModal>
+            <Modal>
                 <div className="flex flex-col">
                     <div className="pb-2">
                         <p>Your ID is {isLoading ? 'loading...' : id}</p>
@@ -35,7 +35,7 @@ const IdModal: React.FC<IDModalProps> = ({id, onIdSubmit, gameStarted}) => {
                         <GoodButton onClick={() => onIdSubmit(enteredValue)}>Go!</GoodButton>
                     </div>
                 </div>
-            </StyledModal>
+            </Modal>
         )
     )({id, onIdSubmit, gameStarted})
 }
