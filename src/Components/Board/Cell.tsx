@@ -3,8 +3,8 @@ import React from "react";
 import {noOp} from "../../Helpers/FunctionalUtilities";
 
 interface CellProps {
-    onClickWhenPlayable: any
-    children: any
+    onClickWhenPlayable: () => void
+    children: React.ReactNode
     isPlayable: boolean
 }
 
