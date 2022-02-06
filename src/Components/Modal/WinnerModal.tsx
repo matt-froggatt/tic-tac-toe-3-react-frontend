@@ -1,3 +1,4 @@
+import * as R from 'ramda'
 import React from "react";
 import {Player} from "../../gameRules";
 import IconFromPlayer from "../Icons/IconFromPlayer";
@@ -9,19 +10,23 @@ interface WinnerProps {
     onPlayAgain: () => void
 }
 
-const WinnerModal: React.FC<WinnerProps> = ({winner, onPlayAgain}) =>
-    winner !== Player.NONE ?
-        <StyledModal>
-            <div className='flex flex-col items-center'>
-                <div className='flex flex-row items-center justify-center pb-2'>
-                    <div className='w-6 h-6'>
-                        <IconFromPlayer player={winner}/>
+const WinnerModal: React.FC<WinnerProps> =
+    R.ifElse(
+        R.propEq('winner', Player.NONE),
+        R.always(null),
+        ({winner, onPlayAgain}: WinnerProps) => (
+            <StyledModal>
+                <div className='flex flex-col items-center'>
+                    <div className='flex flex-row items-center justify-center pb-2'>
+                        <div className='w-6 h-6'>
+                            <IconFromPlayer player={winner}/>
+                        </div>
+                        <p className='font-bold text-xl'> has won!</p>
                     </div>
-                    <p className='font-bold text-xl'> has won!</p>
+                    <GoodButton onClick={onPlayAgain}>Play again?</GoodButton>
                 </div>
-                <GoodButton onClick={onPlayAgain}>Play again?</GoodButton>
-            </div>
-        </StyledModal>
-        : null
+            </StyledModal>
+        )
+    )
 
 export default WinnerModal
