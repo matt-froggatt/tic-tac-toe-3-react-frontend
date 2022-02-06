@@ -1,7 +1,7 @@
 import React from "react"
 
 interface StyledModalProps {
-    children: any
+    children: React.ReactNode
 }
 
 const Modal: React.FC<StyledModalProps> = ({children}) =>
