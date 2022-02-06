@@ -17,4 +17,4 @@ export const noOp = () => {
 }
 
 // Takes in a function and an array, and maps the function over the array, passing an incrementing index
-export const mapIndexed = <T, U>(fn: (index: number, item: T) => U, array: T[]) => R.tail(R.mapAccum((acc, val) => [R.inc(acc), fn(acc, val)], 0, array))
+export const mapIndexed = <T, U>(fn: (index: number, item: T) => U, array: T[]): U[] => R.mapAccum((acc, val) => [R.inc(acc), fn(acc, val)], 0, array)[1]
