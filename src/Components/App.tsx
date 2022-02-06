@@ -42,16 +42,16 @@ const connectToWebSocket = R.pipe(
         R.pipe(
             ws.event,
             R.prop('data'),
-            utils.logData
+            utils.logAndTransformData
         )
     ),
     ws.onClose(
         R.pipe(
-            utils.logData(ws.event, `Socket Closed Connection:`),
+            utils.logAndTransformData(ws.event, `Socket Closed Connection:`),
             ws.send("Client Closed!")
         )
     ),
-    ws.onError(utils.logData(error => ["Socket Error: ", ws.event(error)]))
+    ws.onError(utils.logAndTransformData(error => ["Socket Error: ", ws.event(error)]))
 )
 
 const coordinates = createCoordinates()

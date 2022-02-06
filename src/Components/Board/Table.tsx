@@ -1,5 +1,7 @@
+import * as R from 'ramda'
 import React from "react";
 import SelectBox from "./SelectBox";
+import {mapIndexed} from "../../Helpers/FunctionalUtilities";
 
 interface TableProps {
     children: any[]
@@ -7,25 +9,31 @@ interface TableProps {
     isParentPlayable: boolean
 }
 
-const Table: React.FC<TableProps> = ({children, isPlayable, isParentPlayable}) => {
-    return (
+const Table: React.FC<TableProps> = ({children, isPlayable, isParentPlayable}) =>
         <div className="p-2">
-            <SelectBox isSelected={isPlayable && !isParentPlayable}>
+            <SelectBox isSelected={R.and(isPlayable, R.not(isParentPlayable))}>
                 <table className="border-collapse">
                     <tbody>
-                    {children.map((outer: any, i: number) => (
-                        <tr className="border-t-4 border-black border-solid first:border-none" key={"table-row-" + i}>
-                            {outer.map((inner: any, j: number) => (
-                                <td className="border-l-4 border-black border-solid first:border-none"
-                                    key={"table-item-" + i + j}>{inner}</td>
-                            ))}
-                        </tr>
-                    ))}
+                    {mapIndexed(
+                        (i, outerItem: any) =>
+                            <tr className="border-t-4 border-black border-solid first:border-none" key={"table-row-" + i}>
+                                {mapIndexed(
+                                    (j, innerItem: any) => (
+                                        <td
+                                            className="border-l-4 border-black border-solid first:border-none"
+                                            key={"table-item-" + j}
+                                        >
+                                            {innerItem}
+                                        </td>
+                                    ),
+                                    outerItem
+                                )}
+                            </tr>,
+                        children
+                    )}
                     </tbody>
                 </table>
             </SelectBox>
         </div>
-    );
-}
 
 export default Table;

@@ -7,7 +7,14 @@ export const log = (...args: any[]) => <T>(data: T) => R.tap(() => console.log(.
 // Returns a function which passes all arguments to console.log, takes a generic piece of data, runs the transform
 // function on that data and logs the result, and finally returns the generic data unchanged. For logging data in
 // functions.
-export const logData = <T>(transform: (data: T) => any, ...args: any[]) => (data: T) => R.tap(() => console.log(...args, transform(data)), data)
+export const logAndTransformData = <T>(transform: (data: T) => any, ...args: any[]) => (data: T) => R.tap(() => console.log(...args, transform(data)), data)
+
+// Logs and returns a given value
+export const logValue = <T>(data: T) => log(data)(data)
 
 // Does nothing
-export const noOp = () => {}
+export const noOp = () => {
+}
+
+// Takes in a function and an array, and maps the function over the array, passing an incrementing index
+export const mapIndexed = <T, U>(fn: (index: number, item: T) => U, array: T[]) => R.tail(R.mapAccum((acc, val) => [R.inc(acc), fn(acc, val)], 0, array))
