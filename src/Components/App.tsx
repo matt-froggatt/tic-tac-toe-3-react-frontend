@@ -37,10 +37,16 @@ const connectToWebSocket = R.pipe(
             ws.send("Hi From the Client!")
         )
     ),
-    ws.onMessage((utils.logData(R.pipe(ws.event, R.prop('data'))))),
+    ws.onMessage(
+        R.pipe(
+            ws.event,
+            R.prop('data'),
+            utils.logData
+        )
+    ),
     ws.onClose(
         R.pipe(
-            utils.logData(ws.event,`Socket Closed Connection:`),
+            utils.logData(ws.event, `Socket Closed Connection:`),
             ws.send("Client Closed!")
         )
     ),
