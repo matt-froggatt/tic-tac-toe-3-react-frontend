@@ -27,8 +27,9 @@ const useBoard: () => [BoardState, Player, Player, (c: Coordinates) => void, () 
     return [board, winner, turn, playAtCoordinates, playAgain]
 }
 
+const socket = ws.create(URL)
+
 const connectToWebSocket = R.pipe(
-    ws.create,
     utils.log("Attempting Connection..."),
     ws.onOpen(
         R.pipe(
@@ -36,10 +37,10 @@ const connectToWebSocket = R.pipe(
             ws.send("Hi From the Client!")
         )
     ),
-    ws.onMessage((utils.logData(msg => [ws.event(msg).data]))),
+    ws.onMessage((utils.logData(R.pipe(ws.event, R.prop('data'))))),
     ws.onClose(
         R.pipe(
-            utils.logData(data => [`Socket Closed Connection:`, ws.event(data)]),
+            utils.logData(ws.event,`Socket Closed Connection:`),
             ws.send("Client Closed!")
         )
     ),
@@ -54,8 +55,8 @@ function App() {
     const [board, winner, turn, playAtCoordinates, playAgain] = useBoard()
 
     useEffect(() => {
-        connectToWebSocket(URL)
-    })
+        connectToWebSocket(socket)
+    }, [])
 
     return (
         <div className="flex flex-row items-center justify-center w-screen h-screen overflow-hidden">
@@ -71,6 +72,7 @@ function App() {
                 setGameStarted(true)
             }} gameStarted={gameStarted}/>
             <WinnerModal winner={winner} onPlayAgain={playAgain}/>
+            <button onClick={() => socket.close()}> test </button>
         </div>
     );
 }

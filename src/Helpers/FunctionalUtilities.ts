@@ -4,6 +4,7 @@ import * as R from 'ramda'
 // unchanged. For logging text in functions.
 export const log = (...args: any[]) => <T>(data: T) => R.tap(() => console.log(...args), data)
 
-// Returns a function which logs the given array, where each element is an argument to console.log, to the console and
-// then takes a generic piece of data and returns it unchanged. For logging text in functions.
-export const logData = <T>(msg: (data: T) => any[]) => (data: T) => log(...msg(data))(data)
+// Returns a function which passes all arguments to console.log, takes a generic piece of data, runs the transform
+// function on that data and logs the result, and finally returns the generic data unchanged. For logging data in
+// functions.
+export const logData = <T>(transform: (data: T) => any, ...args: any[]) => (data: T) => R.tap(() => console.log(...args, transform(data)), data)
