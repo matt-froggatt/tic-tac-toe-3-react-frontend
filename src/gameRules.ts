@@ -1,5 +1,7 @@
-// Need to update game based on message
+import * as R from 'ramda'
 
+// Need to update game based on message
+// TODO update to use ramda
 export interface BoardState {
     winner: Player
     isPlayable: boolean
@@ -67,6 +69,7 @@ function rest<T>(array: T[]): T[] {
     return array.slice(1, array.length)
 }
 
+// TODO add typing
 function changeAtIndex(array: any[], value: any, index: number): any[] {
     let newArray = array.slice()
     newArray[index] = value
@@ -103,6 +106,7 @@ function changeAtCoordinates(coordinates: Coordinates, board: BoardState, change
 
 const EmptyCoordinates = {data: []};
 
+// TODO add typing
 function isArrayOfBoardArray(arrayOfArrays: any[][]): arrayOfArrays is BoardState[][] {
     for (let array of arrayOfArrays) {
         for (let item of array) {
@@ -184,18 +188,12 @@ function updatePlayable(playableCoordinate: Coordinate, board: BoardState, isPar
     }
 }
 
-function min(a: number, b: number): number {
-    return a < b ? a : b
-}
-
-function getWinnerOfCell(item: BoardState | Player): Player {
-    return isBoard(item) ? winnerOfBoard(item.containedItems) : item
-}
+const getWinnerOfCell = (item: BoardState | Player): Player  => isBoard(item) ? winnerOfBoard(item.containedItems) : item
 
 function verticalWinner(board: BoardState[][] | Player[][], column: number): Player {
     let prevWinner = null
 
-    for(let i = 0; i < board.length; ++i) {
+    for (let i = 0; i < board.length; ++i) {
         const currentWinner = getWinnerOfCell(board[i][column])
         if (prevWinner !== null && currentWinner !== prevWinner) return Player.NONE
         prevWinner = currentWinner
@@ -208,7 +206,7 @@ function horizontalWinner(board: BoardState[][] | Player[][], row: number): Play
     let prevWinner = null
     const array = board[row]
 
-    for(let i = 0; i < array.length; ++i) {
+    for (let i = 0; i < array.length; ++i) {
         const currentWinner = getWinnerOfCell(array[i])
         if (prevWinner !== null && currentWinner !== prevWinner) return Player.NONE
         prevWinner = currentWinner
@@ -220,9 +218,9 @@ function horizontalWinner(board: BoardState[][] | Player[][], row: number): Play
 function antiDiagonalWinner(board: BoardState[][] | Player[][]): Player {
     let prevWinner = null
 
-    const size = min(board.length, board[0].length);
+    const size = R.min(board.length, board[0].length);
 
-    for(let i = 0; i < size; ++i) {
+    for (let i = 0; i < size; ++i) {
         const currentWinner = getWinnerOfCell(board[i][board[i].length - 1 - i])
         if (prevWinner != null && currentWinner !== prevWinner) return Player.NONE
         prevWinner = currentWinner
@@ -234,9 +232,9 @@ function antiDiagonalWinner(board: BoardState[][] | Player[][]): Player {
 function diagonalWinner(board: BoardState[][] | Player[][]): Player {
     let prevWinner = null
 
-    const size = min(board.length, board[0].length);
+    const size = R.min(board.length, board[0].length);
 
-    for(let i = 0; i < size; ++i) {
+    for (let i = 0; i < size; ++i) {
         const currentWinner = getWinnerOfCell(board[i][i])
         if (prevWinner !== null && currentWinner !== prevWinner) return Player.NONE
         prevWinner = currentWinner
@@ -246,12 +244,12 @@ function diagonalWinner(board: BoardState[][] | Player[][]): Player {
 }
 
 function winnerOfBoard(board: BoardState[][] | Player[][]): Player {
-    for(let i = 0; i < board.length; ++i) {
+    for (let i = 0; i < board.length; ++i) {
         const tempHorizontalWinner = horizontalWinner(board, i)
         if (tempHorizontalWinner !== Player.NONE) return tempHorizontalWinner
     }
 
-    for(let i = 0; i < board[0].length; ++i) {
+    for (let i = 0; i < board[0].length; ++i) {
         const tempVerticalWinner = verticalWinner(board, i)
         if (tempVerticalWinner !== Player.NONE) return tempVerticalWinner
     }
@@ -303,26 +301,22 @@ export function updateState(coordinates: Coordinates, state: State): State {
     return updatedState
 }
 
-export function isBoard(state: any): state is BoardState {
-    return typeof state != "string";
-}
+// TODO add typing
+export const isBoard = (state: any): state is BoardState => typeof state != "string";
 
-export function getBoardInfo(state: BoardState): any[][] {
-    return state.containedItems;
-}
+// TODO add typing
+export const getBoardInfo = (state: BoardState): any[][] => state.containedItems
 
-export function getBoardFromState(state: State): BoardState {
-    return state.board;
-}
+export const getBoardFromState = (state: State): BoardState => state.board
 
-export function createCoordinates() {
-    return {data: []}
-}
 
-export function updateCoordinates(coordinates: Coordinates, x: number, y: number): Coordinates {
-    let temp = {data: coordinates.data.slice()}
-    temp.data.push({x: x, y: y})
-    return temp
-}
+export const createCoordinates = () => ({data: []})
+
+export const updateCoordinates = (coordinates: Coordinates, x: number, y: number): Coordinates => ({
+    data: R.append({
+        x: x,
+        y: y
+    }, coordinates.data)
+})
 
 export default startState;
