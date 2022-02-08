@@ -29,20 +29,12 @@ export enum Player {
     NONE = ""
 }
 
-function generateArrayOfArraysOf<T>(itemCreator: () => T, width: number, height: number): T[][] {
-    const array = Array(height)
-    for (let i = 0; i < array.length; ++i) {
-        const innerArray = Array(width)
-        for (let j = 0; j < innerArray.length; ++j) innerArray[j] = itemCreator()
-        array[i] = innerArray
-    }
-    return array
-}
+const generate2dArrayOf = <T>(width: number, height: number, itemCreator: () => T): T[][] => R.times(() => R.times(itemCreator, width), height)
 
 const generateStartInnerState = (levels = 2, width = 3, height = 3): BoardState => ({
     winner: Player.NONE,
     isPlayable: true,
-    containedItems: levels === 1 ? generateArrayOfArraysOf(() => Player.NONE, width, height) : generateArrayOfArraysOf(() => generateStartInnerState(levels - 1, width, height), width, height)
+    containedItems: levels === 1 ? generate2dArrayOf(width, height, () => Player.NONE) : generate2dArrayOf(width, height, () => generateStartInnerState(levels - 1, width, height))
 })
 
 const generateStartState = ({levels = 2, width = 3, height = 3}): State => ({
