@@ -127,11 +127,8 @@ function isBoardFull(board: BoardState): boolean {
         ) : isAnyEmpty(board.containedItems)
 }
 
-function getBoardAtCoordinates(coordinates: Coordinates, board: BoardState): BoardState {
-    const firstCoord = firstCoordinate(coordinates)
-    return coordinates === EmptyCoordinates || !isArrayOfBoardArray(board.containedItems) ?
-        board : getBoardAtCoordinates(restCoordinates(coordinates), board.containedItems[firstCoord.x][firstCoord.y])
-}
+const getBoardAtCoordinates = (coordinates: Coordinates, board: BoardState): BoardState => coordinates === EmptyCoordinates || !isArrayOfBoardArray(board.containedItems) ?
+        board : getBoardAtCoordinates(restCoordinates(coordinates), board.containedItems[firstCoordinate(coordinates).x][firstCoordinate(coordinates).y])
 
 const isBoardAtCoordinatesFull = (coordinates: Coordinates, state: State): boolean =>
     isBoardFull(getBoardAtCoordinates(coordinates, getBoardFromState(state)))
