@@ -146,18 +146,21 @@ const columnWinner = (board: BoardState[][] | Player[][], column: number): Playe
         board
     ) || Player.NONE
 
-function rowWinner(board: BoardState[][] | Player[][], row: number): Player {
-    let prevWinner = null
-    const array = board[row]
-
-    for (let i = 0; i < array.length; ++i) {
-        const currentWinner = getWinnerOfCell(array[i])
-        if (prevWinner !== null && currentWinner !== prevWinner) return Player.NONE
-        prevWinner = currentWinner
-    }
-
-    return prevWinner || Player.NONE
-}
+const rowWinner = (board: BoardState[][] | Player[][], row: number): Player =>
+    R.reduce<BoardState | Player, Player | undefined>(
+        (prevWinner, currentRow) =>
+            R.unless<Player | undefined, Player>(
+                (currentWinner) =>
+                    R.either(
+                        R.always(R.isNil(prevWinner)),
+                        R.always(R.equals(currentWinner, prevWinner))
+                    )(),
+                () => Player.NONE,
+                getWinnerOfCell(currentRow)
+            ),
+        undefined,
+        board[row]
+    ) || Player.NONE
 
 function antiDiagonalWinner(board: BoardState[][] | Player[][]): Player {
     let prevWinner = null
