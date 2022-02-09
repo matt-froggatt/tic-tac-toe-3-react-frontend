@@ -89,28 +89,11 @@ const restCoordinates = (coordinates: Coordinates): Coordinates => ({data: R.tai
 
 const isAnyEmpty: (squares: Player[][]) => boolean = R.any<Player[]>(R.any<Player>(player => R.equals(Player.NONE, player)))
 
-function foldr<T, S>(array: T[], start: S, func: (item: T, value: S) => S): S {
-    if (array.length === 0) {
-        return start
-    }
-    return func(R.head(array)!, foldr(R.tail(array), start, func))
-}
-
-function isBoardFull(board: BoardState): boolean {
-    return isArrayOfBoardArray(board.containedItems) ?
-        foldr(
-            board.containedItems,
-            false as boolean,
-            (item, value) =>
-                value ||
-                foldr(
-                    item,
-                    false as boolean,
-                    (item, value) =>
-                        value || isBoardFull(item)
-                )
-        ) : isAnyEmpty(board.containedItems)
-}
+const isBoardFull = (board: BoardState): boolean => isArrayOfBoardArray(board.containedItems) ?
+        R.reduce((value, item) =>
+            value ||
+            R.reduce((value, item) =>
+                value || isBoardFull(item), false as boolean, item), false as boolean, board.containedItems) : isAnyEmpty(board.containedItems)
 
 const getBoardAtCoordinates = (coordinates: Coordinates, board: BoardState): BoardState => coordinates === EmptyCoordinates || !isArrayOfBoardArray(board.containedItems) ?
     board : getBoardAtCoordinates(restCoordinates(coordinates), board.containedItems[firstCoordinate(coordinates).x][firstCoordinate(coordinates).y])
