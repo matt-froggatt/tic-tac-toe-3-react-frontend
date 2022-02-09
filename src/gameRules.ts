@@ -29,6 +29,9 @@ export enum Player {
     NONE = ""
 }
 
+// TODO add typing
+export const isBoard = (state: any): state is BoardState => R.not(R.equals(typeof state, "string"));
+
 const generate2dArrayOf = <T>(width: number, height: number, itemCreator: () => T): T[][] => R.times(() => R.times(itemCreator, width), height)
 
 const generateStartInnerState = (levels = 2, width = 3, height = 3): BoardState => ({
@@ -47,11 +50,7 @@ const generateStartState = ({levels = 2, width = 3, height = 3}): State => ({
 const startState = generateStartState({width: 3, height: 3})
 
 // TODO add typing
-function changeAtIndex(array: any[], value: any, index: number): any[] {
-    let newArray = array.slice()
-    newArray[index] = value
-    return newArray
-}
+const changeAtIndex = (array: any[], value: any, index: number): any[] => R.set(R.lensIndex(index), value, array)
 
 const coordinatesFromArray = (array: Coordinate[]): Coordinates => ({data: array})
 
@@ -82,27 +81,13 @@ function changeAtCoordinates(coordinates: Coordinates, board: BoardState, change
 const EmptyCoordinates = {data: []};
 
 // TODO add typing
-function isArrayOfBoardArray(arrayOfArrays: any[][]): arrayOfArrays is BoardState[][] {
-    for (let array of arrayOfArrays) {
-        for (let item of array) {
-            if (!isBoard(item)) return false
-        }
-    }
-    return true
-}
+const isArrayOfBoardArray = (arr: any[][]): arr is BoardState[][] => R.all<any[]>(R.all(isBoard))(arr)
 
 const firstCoordinate = (coordinates: Coordinates): Coordinate => R.head(coordinates.data)!
 
 const restCoordinates = (coordinates: Coordinates): Coordinates => ({data: R.tail(coordinates.data)})
 
-function isAnyEmpty(squares: Player[][]): boolean {
-    for (const array of squares) {
-        for (const square of array) {
-            if (square === Player.NONE) return true
-        }
-    }
-    return false
-}
+const isAnyEmpty: (squares: Player[][]) => boolean = R.any<Player[]>(R.any<Player>(player => R.equals(Player.NONE, player)))
 
 function foldr<T, S>(array: T[], start: S, func: (item: T, value: S) => S): S {
     if (array.length === 0) {
@@ -128,7 +113,7 @@ function isBoardFull(board: BoardState): boolean {
 }
 
 const getBoardAtCoordinates = (coordinates: Coordinates, board: BoardState): BoardState => coordinates === EmptyCoordinates || !isArrayOfBoardArray(board.containedItems) ?
-        board : getBoardAtCoordinates(restCoordinates(coordinates), board.containedItems[firstCoordinate(coordinates).x][firstCoordinate(coordinates).y])
+    board : getBoardAtCoordinates(restCoordinates(coordinates), board.containedItems[firstCoordinate(coordinates).x][firstCoordinate(coordinates).y])
 
 const isBoardAtCoordinatesFull = (coordinates: Coordinates, state: State): boolean =>
     isBoardFull(getBoardAtCoordinates(coordinates, getBoardFromState(state)))
@@ -261,9 +246,6 @@ export function updateState(coordinates: Coordinates, state: State): State {
 
     return updatedState
 }
-
-// TODO add typing
-export const isBoard = (state: any): state is BoardState => typeof state != "string";
 
 // TODO add typing
 export const getBoardInfo = (state: BoardState): any[][] => state.containedItems
