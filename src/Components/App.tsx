@@ -4,7 +4,7 @@ import startState, {
     Coordinates,
     createCoordinates,
     getBoardFromState, Player,
-    State,
+    GameState,
     updateState,
 } from "../gameRules";
 import Board from "./Board/Board";
@@ -20,7 +20,7 @@ const URL = window.location.hostname + ":8080"
 const socket = ws.create(URL)
 
 const useBoard = (): [BoardState, Player, Player, (c: Coordinates) => void, () => void] => {
-    const [state, setState] = useState<State>(startState)
+    const [state, setState] = useState<GameState>(startState)
     return [
         getBoardFromState(state),
         state.winner,

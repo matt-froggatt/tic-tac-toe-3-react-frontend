@@ -8,16 +8,16 @@ export interface BoardState {
     containedItems: BoardState[][] | Player[][]
 }
 
-interface Coordinate {
+type Coordinate = {
     x: number
     y: number
 }
 
-export interface Coordinates {
+export type Coordinates = {
     data: Coordinate[]
 }
 
-export interface State {
+export interface GameState {
     winner: Player
     turn: Player
     board: BoardState
@@ -30,20 +30,31 @@ export enum Player {
 }
 
 // TODO add typing
-export const isBoard = (state: any): state is BoardState => R.not(R.equals(typeof state, "string"));
+export const isBoard = (state: any): state is BoardState => R.not(R.equals(typeof state, "string"))
+
+// TODO add typing
+const isArrayOfBoardArray = (arr: any[][]): arr is BoardState[][] => R.all<any[]>(R.all(isBoard))(arr)
+
+const performOnBoardStateContainedItems = <T>(fnIfBoardState: (arr: BoardState[][]) => T, fnIfPlayer: (val: Player[][]) => T, containedItems: BoardState[][] | Player[][]): T =>
+    R.ifElse(
+        isArrayOfBoardArray,
+        (item) =>
+            fnIfBoardState(item as BoardState[][]),
+        (item) => fnIfPlayer(item as Player[][])
+    )(containedItems)
 
 const generate2dArrayOf = <T>(width: number, height: number, itemCreator: () => T): T[][] => R.times(() => R.times(itemCreator, width), height)
 
-const generateStartInnerState = (levels = 2, width = 3, height = 3): BoardState => ({
+const generateStartInnerBoard = (levels = 2, width = 3, height = 3): BoardState => ({
     winner: Player.NONE,
     isPlayable: true,
-    containedItems: levels === 1 ? generate2dArrayOf(width, height, () => Player.NONE) : generate2dArrayOf(width, height, () => generateStartInnerState(levels - 1, width, height))
+    containedItems: levels === 1 ? generate2dArrayOf(width, height, () => Player.NONE) : generate2dArrayOf(width, height, () => generateStartInnerBoard(levels - 1, width, height))
 })
 
-const generateStartState = ({levels = 2, width = 3, height = 3}): State => ({
+const generateStartState = ({levels = 2, width = 3, height = 3}): GameState => ({
         winner: Player.NONE,
         turn: Player.X,
-        board: generateStartInnerState(levels, width, height)
+        board: generateStartInnerBoard(levels, width, height)
     }
 )
 
@@ -80,9 +91,6 @@ function changeAtCoordinates(coordinates: Coordinates, board: BoardState, change
 
 const EmptyCoordinates = {data: []};
 
-// TODO add typing
-const isArrayOfBoardArray = (arr: any[][]): arr is BoardState[][] => R.all<any[]>(R.all(isBoard))(arr)
-
 const firstCoordinate = (coordinates: Coordinates): Coordinate => R.head(coordinates.data)!
 
 const restCoordinates = (coordinates: Coordinates): Coordinates => ({data: R.tail(coordinates.data)})
@@ -90,34 +98,41 @@ const restCoordinates = (coordinates: Coordinates): Coordinates => ({data: R.tai
 const isAnyEmpty: (squares: Player[][]) => boolean = R.any<Player[]>(R.any<Player>(player => R.equals(Player.NONE, player)))
 
 const isBoardFull = (board: BoardState): boolean => isArrayOfBoardArray(board.containedItems) ?
+    R.reduce((value, item) =>
+        value ||
         R.reduce((value, item) =>
-            value ||
-            R.reduce((value, item) =>
-                value || isBoardFull(item), false as boolean, item), false as boolean, board.containedItems) : isAnyEmpty(board.containedItems)
+            value || isBoardFull(item), false as boolean, item), false as boolean, board.containedItems) : isAnyEmpty(board.containedItems)
 
 const getBoardAtCoordinates = (coordinates: Coordinates, board: BoardState): BoardState => coordinates === EmptyCoordinates || !isArrayOfBoardArray(board.containedItems) ?
     board : getBoardAtCoordinates(restCoordinates(coordinates), board.containedItems[firstCoordinate(coordinates).x][firstCoordinate(coordinates).y])
 
-const isBoardAtCoordinatesFull = (coordinates: Coordinates, state: State): boolean =>
+const isBoardAtCoordinatesFull = (coordinates: Coordinates, state: GameState): boolean =>
     isBoardFull(getBoardAtCoordinates(coordinates, getBoardFromState(state)))
 
-function updatePlayable(playableCoordinate: Coordinate, board: BoardState, isParentPlayable = false, currentCoordinates: Coordinates = EmptyCoordinates): BoardState {
-    const isPlayable = isParentPlayable || (firstCoordinate(currentCoordinates) && R.equals(playableCoordinate, firstCoordinate(currentCoordinates)))
-    return {
-        winner: board.winner,
-        isPlayable: isPlayable,
-        containedItems: isArrayOfBoardArray(board.containedItems) ?
-            board.containedItems.map(
-                (array, x) =>
-                    array.map(
-                        (item, y) =>
-                            updatePlayable(playableCoordinate, item, isPlayable, updateCoordinates(currentCoordinates, x, y))
-                    )
-            ) : board.containedItems
-    }
-}
+const updatePlayable = (playableCoordinate: Coordinate, board: BoardState, isParentPlayable = false, currentCoordinates: Coordinates = EmptyCoordinates): BoardState => ({
+    winner: board.winner,
+    isPlayable: isParentPlayable || (firstCoordinate(currentCoordinates) && R.equals(playableCoordinate, firstCoordinate(currentCoordinates))),
+    containedItems: isArrayOfBoardArray(board.containedItems) ?
+        board.containedItems.map(
+            (array, x) =>
+                array.map(
+                    (item, y) =>
+                        updatePlayable(playableCoordinate, item, isParentPlayable || (firstCoordinate(currentCoordinates) && R.equals(playableCoordinate, firstCoordinate(currentCoordinates))), updateCoordinates(currentCoordinates, x, y))
+                )
+        ) : board.containedItems
+})
 
-const getWinnerOfCell = (item: BoardState | Player): Player => isBoard(item) ? winnerOfBoard(item.containedItems) : item
+const CONTAINED_ITEMS: keyof BoardState = 'containedItems'
+
+const asBoard = (item: BoardState | Player): BoardState => item as BoardState
+
+const asPlayer = (item: BoardState | Player): Player => item as Player
+
+const getWinnerOfCell = R.ifElse<(BoardState | Player)[], Player, Player>(
+    isBoard,
+    (item) => winnerOfBoard(asBoard(item).containedItems),
+    (item) => asPlayer(item)
+)
 
 function verticalWinner(board: BoardState[][] | Player[][], column: number): Player {
     let prevWinner = null
@@ -213,28 +228,23 @@ function updateWinner(board: BoardState): BoardState {
     return board
 }
 
-export function updateState(coordinates: Coordinates, state: State): State {
+export function updateState(coordinates: Coordinates, state: GameState): GameState {
     const newBoard = changeAtCoordinates(coordinates, state.board, () => state.turn);
     let winnerUpdatedBoard
 
     if (newBoard) winnerUpdatedBoard = updateWinner(newBoard)
 
-    const updatedState = {
+    return {
         winner: newBoard && winnerUpdatedBoard ? winnerUpdatedBoard.winner : state.winner, // Check winners of InnerStates
         turn: newBoard ? state.turn === Player.X ? Player.O : Player.X : state.turn,
         board: newBoard && winnerUpdatedBoard ? updatePlayable(R.last(coordinates.data)!, winnerUpdatedBoard, !isBoardAtCoordinatesFull({data: [R.last(coordinates.data)!]}, state)) : state.board
     }
-
-    console.log(updatedState)
-
-    return updatedState
 }
 
 // TODO add typing
 export const getBoardInfo = (state: BoardState): any[][] => state.containedItems
 
-export const getBoardFromState = (state: State): BoardState => state.board
-
+export const getBoardFromState = (state: GameState): BoardState => state.board
 
 export const createCoordinates = () => ({data: []})
 
