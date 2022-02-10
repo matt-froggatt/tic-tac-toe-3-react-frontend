@@ -1,7 +1,8 @@
 import * as R from 'ramda'
 
 // Need to update game based on message
-// TODO update to use ramda
+// TODO update to use FP-TS
+// TODO add eslint
 export interface BoardState {
     winner: Player
     isPlayable: boolean
@@ -33,7 +34,21 @@ const EmptyCoordinates = {data: []};
 
 export const isBoard = (state: any): state is BoardState => R.not(R.equals(typeof state, "string"))
 
+export const getBoardFromState = (state: GameState): BoardState => state.board
+
+export const createCoordinates = () => ({data: []})
+
+export const updateCoordinates = (coordinates: Coordinates, x: number, y: number): Coordinates => ({
+    data: R.append({
+        x: x,
+        y: y
+    }, coordinates.data)
+})
+
 const isArrayOfBoardArray = (arr: any[][]): arr is BoardState[][] => R.all<any[]>(R.all(isBoard))(arr)
+
+// TODO add typing
+export const getBoardInfo = (state: BoardState): any[][] => state.containedItems
 
 const performOnBoardStateContainedItems = <T>(fnIfBoardState: (arr: BoardState[][]) => T, fnIfPlayer: (val: Player[][]) => T, containedItems: BoardState[][] | Player[][]): T =>
     R.ifElse(
@@ -61,13 +76,13 @@ const generateStartState = (levels = 2, width = 3, height = 3): GameState => ({
 )
 
 const startState = generateStartState()
-// TODO add typing
 
+// TODO add typing
 const changeAtIndex = (array: any[], value: any, index: number): any[] => R.set(R.lensIndex(index), value, array)
 
 const coordinatesFromArray = (array: Coordinate[]): Coordinates => ({data: array})
-// TODO make more readable
 
+// TODO make more readable
 const changeAtCoordinates = (value: Player, coordinates: Coordinates, board: BoardState): BoardState => ({
     winner: board.winner,
     isPlayable: board.isPlayable,
@@ -130,6 +145,7 @@ const getWinnerOfCell = R.ifElse<(BoardState | Player)[], Player, Player>(
     (item) => asPlayer(item)
 )
 
+// TODO extract and combine duplicated logic where possible
 const columnWinner = (board: BoardState[][] | Player[][], column: number): Player =>
     R.reduce<BoardState[] | Player[], Player | undefined>(
         (prevWinner, currentRow) =>
@@ -139,7 +155,7 @@ const columnWinner = (board: BoardState[][] | Player[][], column: number): Playe
                         R.always(R.isNil(prevWinner)),
                         R.always(R.equals(currentWinner, prevWinner))
                     )(),
-                () => Player.NONE,
+                R.always(Player.NONE),
                 getWinnerOfCell(currentRow[column])
             ),
         undefined,
@@ -155,13 +171,15 @@ const rowWinner = (board: BoardState[][] | Player[][], row: number): Player =>
                         R.always(R.isNil(prevWinner)),
                         R.always(R.equals(currentWinner, prevWinner))
                     )(),
-                () => Player.NONE,
+                R.always(Player.NONE),
                 getWinnerOfCell(currentRow)
             ),
         undefined,
         board[row]
     ) || Player.NONE
 
+
+// TODO update to use ramda
 function antiDiagonalWinner(board: BoardState[][] | Player[][]): Player {
     let prevWinner = null
 
@@ -243,19 +261,5 @@ export function updateState(coordinates: Coordinates, state: GameState): GameSta
         board: newBoard && winnerUpdatedBoard ? updatePlayable(R.last(coordinates.data)!, winnerUpdatedBoard, !isBoardAtCoordinatesFull({data: [R.last(coordinates.data)!]}, state)) : state.board
     }
 }
-
-// TODO add typing
-export const getBoardInfo = (state: BoardState): any[][] => state.containedItems
-
-export const getBoardFromState = (state: GameState): BoardState => state.board
-
-export const createCoordinates = () => ({data: []})
-
-export const updateCoordinates = (coordinates: Coordinates, x: number, y: number): Coordinates => ({
-    data: R.append({
-        x: x,
-        y: y
-    }, coordinates.data)
-})
 
 export default startState;
