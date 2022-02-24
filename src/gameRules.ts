@@ -1,4 +1,12 @@
 import * as R from 'ramda'
+import * as B from 'fp-ts-std/Boolean'
+import * as s from 'fp-ts/string'
+import * as A from 'fp-ts/Array'
+import * as F from 'fp-ts-std/Function'
+import * as f from 'fp-ts/function'
+import * as Opt from 'fp-ts/Option'
+import * as Ord from 'fp-ts/Ord'
+import * as n from 'fp-ts/number'
 
 // Need to update game based on message
 // TODO update to use FP-TS
@@ -32,40 +40,40 @@ export enum Player {
 
 const EmptyCoordinates = {data: []};
 
-export const isBoard = (state: any): state is BoardState => R.not(R.equals(typeof state, "string"))
+export const isBoard = (state: any): state is BoardState => B.invert(s.Eq.equals(typeof state, "string"))
 
 export const getBoardFromState = (state: GameState): BoardState => state.board
 
 export const createCoordinates = () => ({data: []})
 
 export const updateCoordinates = (coordinates: Coordinates, x: number, y: number): Coordinates => ({
-    data: R.append({
+    data: A.append({
         x: x,
         y: y
-    }, coordinates.data)
+    })(coordinates.data)
 })
 
-const isArrayOfBoardArray = (arr: any[][]): arr is BoardState[][] => R.all<any[]>(R.all(isBoard))(arr)
+const isArrayOfBoardArray = (arr: any[][]): arr is BoardState[][] => A.every(A.every(isBoard))(arr)
 
 // TODO add typing
 export const getBoardInfo = (state: BoardState): any[][] => state.containedItems
 
 const performOnBoardStateContainedItems = <T>(fnIfBoardState: (arr: BoardState[][]) => T, fnIfPlayer: (val: Player[][]) => T, containedItems: BoardState[][] | Player[][]): T =>
-    R.ifElse(
-        isArrayOfBoardArray,
+    F.ifElse<BoardState[][] | Player[][], T>(
         (item) =>
-            fnIfBoardState(item as BoardState[][]),
+            fnIfBoardState(item as BoardState[][])
+    )(
         (item) => fnIfPlayer(item as Player[][])
-    )(containedItems)
+    )(isArrayOfBoardArray)(containedItems)
 
-const generate2dArrayOf = <T>(itemCreator: () => T, width: number, height: number): T[][] => R.times(() => R.times(itemCreator, width), height)
+const generate2dArrayOf = <T>(itemCreator: () => T, width: number, height: number): T[][] => A.makeBy(height, () => A.makeBy(width, itemCreator))
 
 const generateStartInnerBoard = (levels = 2, width = 3, height = 3): BoardState => ({
     winner: Player.NONE,
     isPlayable: true,
     containedItems: levels === 1 ?
-        generate2dArrayOf(R.always(Player.NONE), width, height) :
-        generate2dArrayOf(R.always(generateStartInnerBoard(levels - 1, width, height)), width, height)
+        generate2dArrayOf(f.constant(Player.NONE), width, height) :
+        generate2dArrayOf(f.constant(generateStartInnerBoard(levels - 1, width, height)), width, height)
 })
 
 const generateStartState = (levels = 2, width = 3, height = 3): GameState => ({
@@ -78,7 +86,7 @@ const generateStartState = (levels = 2, width = 3, height = 3): GameState => ({
 const startState = generateStartState()
 
 // TODO add typing
-const changeAtIndex = (array: any[], value: any, index: number): any[] => R.set(R.lensIndex(index), value, array)
+const changeAtIndex = (array: any[], value: any, index: number): any[] => Opt.getOrElse<any[]>(f.constant([]))(A.updateAt(index, value)(array))
 
 const coordinatesFromArray = (array: Coordinate[]): Coordinates => ({data: array})
 
@@ -89,32 +97,40 @@ const changeAtCoordinates = (value: Player, coordinates: Coordinates, board: Boa
     containedItems:
         performOnBoardStateContainedItems(
             arr => changeAtIndex(board.containedItems,
-                changeAtIndex(board.containedItems[R.head(coordinates.data)!.x],
-                    changeAtCoordinates(value, coordinatesFromArray(R.tail(coordinates.data)),
-                        arr[R.head(coordinates.data)!.x][R.head(coordinates.data)!.y]),
-                    R.head(coordinates.data)!.y),
-                R.head(coordinates.data)!.x),
+                changeAtIndex(board.containedItems[Opt.toUndefined(A.head(coordinates.data))!.x],
+                    changeAtCoordinates(value, coordinatesFromArray(Opt.toUndefined(A.tail(coordinates.data))!),
+                        arr[Opt.toUndefined(A.head(coordinates.data))!.x][Opt.toUndefined(A.head(coordinates.data))!.y]),
+                    Opt.toUndefined(A.head(coordinates.data))!.y),
+                Opt.toUndefined(A.head(coordinates.data))!.x),
             arr => changeAtIndex(
                 board.containedItems,
-                changeAtIndex(board.containedItems[R.head(coordinates.data)!.x], value, R.head(coordinates.data)!.y),
-                R.head(coordinates.data)!.x
+                changeAtIndex(board.containedItems[Opt.toUndefined(A.head(coordinates.data))!.x], value, Opt.toUndefined(A.head(coordinates.data))!.y),
+                Opt.toUndefined(A.head(coordinates.data))!.x
             ),
             board.containedItems
         )
 })
 
-const firstCoordinate = (coordinates: Coordinates): Coordinate => R.head(coordinates.data)!
+const firstCoordinate = (coordinates: Coordinates): Coordinate => Opt.toUndefined(A.head(coordinates.data))!
 
-const restCoordinates = (coordinates: Coordinates): Coordinates => ({data: R.tail(coordinates.data)})
+const restCoordinates = (coordinates: Coordinates): Coordinates => ({data: Opt.toUndefined(A.tail(coordinates.data))!})
 
-const isAnyEmpty: (squares: Player[][]) => boolean = R.any<Player[]>(R.any<Player>(player => R.equals(Player.NONE, player)))
+// TODO figure out how to replace ramda equals
+const isAnyEmpty: (squares: Player[][]) => boolean = A.some<Player[]>(A.some<Player>(player => R.equals(Player.NONE, player)))
 
 // TODO make more readable
 const isBoardFull = (board: BoardState): boolean => isArrayOfBoardArray(board.containedItems) ?
-    R.reduce((value, item) =>
-        value ||
-        R.reduce((value, item) =>
-            value || isBoardFull(item), false as boolean, item), false as boolean, board.containedItems) : isAnyEmpty(board.containedItems)
+    A.reduce<BoardState[], boolean>(
+        false as boolean,
+        (value, item) =>
+            value ||
+            A.reduce<BoardState, boolean>(
+                false as boolean,
+                (value, item) =>
+                    value || isBoardFull(item))(item))(
+        board.containedItems
+    ) : isAnyEmpty(board.containedItems)
+
 
 const getBoardAtCoordinates = (coordinates: Coordinates, board: BoardState): BoardState => coordinates === EmptyCoordinates || !isArrayOfBoardArray(board.containedItems) ?
     board : getBoardAtCoordinates(restCoordinates(coordinates), board.containedItems[firstCoordinate(coordinates).x][firstCoordinate(coordinates).y])
@@ -122,6 +138,7 @@ const getBoardAtCoordinates = (coordinates: Coordinates, board: BoardState): Boa
 const isBoardAtCoordinatesFull = (coordinates: Coordinates, state: GameState): boolean =>
     isBoardFull(getBoardAtCoordinates(coordinates, getBoardFromState(state)))
 
+// TODO Determine how to replace ramda equals with FP-TS
 const updatePlayable = (playableCoordinate: Coordinate, board: BoardState, isParentPlayable = false, currentCoordinates: Coordinates = EmptyCoordinates): BoardState => ({
     winner: board.winner,
     isPlayable: isParentPlayable || (firstCoordinate(currentCoordinates) && R.equals(playableCoordinate, firstCoordinate(currentCoordinates))),
@@ -152,10 +169,10 @@ const columnWinner = (board: BoardState[][] | Player[][], column: number): Playe
             R.unless<Player | undefined, Player>(
                 (currentWinner) =>
                     R.either(
-                        R.always(R.isNil(prevWinner)),
-                        R.always(R.equals(currentWinner, prevWinner))
+                        f.constant(R.isNil(prevWinner)),
+                        f.constant(R.equals(currentWinner, prevWinner))
                     )(),
-                R.always(Player.NONE),
+                f.constant(Player.NONE),
                 getWinnerOfCell(currentRow[column])
             ),
         undefined,
@@ -168,10 +185,10 @@ const rowWinner = (board: BoardState[][] | Player[][], row: number): Player =>
             R.unless<Player | undefined, Player>(
                 (currentWinner) =>
                     R.either(
-                        R.always(R.isNil(prevWinner)),
-                        R.always(R.equals(currentWinner, prevWinner))
+                        f.constant(R.isNil(prevWinner)),
+                        f.constant(R.equals(currentWinner, prevWinner))
                     )(),
-                R.always(Player.NONE),
+                f.constant(Player.NONE),
                 getWinnerOfCell(currentRow)
             ),
         undefined,
@@ -183,7 +200,7 @@ const rowWinner = (board: BoardState[][] | Player[][], row: number): Player =>
 function antiDiagonalWinner(board: BoardState[][] | Player[][]): Player {
     let prevWinner = null
 
-    const size = R.min(board.length, board[0].length);
+    const size = Ord.min(n.Ord)(board.length, board[0].length);
 
     for (let i = 0; i < size; ++i) {
         const currentWinner = getWinnerOfCell(board[i][board[i].length - 1 - i])
@@ -197,7 +214,7 @@ function antiDiagonalWinner(board: BoardState[][] | Player[][]): Player {
 function diagonalWinner(board: BoardState[][] | Player[][]): Player {
     let prevWinner = null
 
-    const size = R.min(board.length, board[0].length);
+    const size = Ord.min(n.Ord)(board.length, board[0].length);
 
     for (let i = 0; i < size; ++i) {
         const currentWinner = getWinnerOfCell(board[i][i])
@@ -209,15 +226,18 @@ function diagonalWinner(board: BoardState[][] | Player[][]): Player {
 }
 
 function winnerOfBoard(board: BoardState[][] | Player[][]): Player {
-    for (let i = 0; i < board.length; ++i) {
-        const tempHorizontalWinner = rowWinner(board, i)
-        if (tempHorizontalWinner !== Player.NONE) return tempHorizontalWinner
-    }
+    const [, tempHorizontalWinner] = A.reduce<BoardState[] | Player[], [number, Player]>(
+        [0, Player.NONE],
+        ([index, result]) => [R.inc(index), result === Player.NONE ? rowWinner(board, index) : result]
+    )(board)
+    if (tempHorizontalWinner !== Player.NONE) return tempHorizontalWinner
 
-    for (let i = 0; i < board[0].length; ++i) {
-        const tempVerticalWinner = columnWinner(board, i)
-        if (tempVerticalWinner !== Player.NONE) return tempVerticalWinner
-    }
+
+    const [, tempVerticalWinner] = A.reduce<BoardState | Player, [number, Player]>(
+        [0, Player.NONE],
+        ([index, result]) => [R.inc(index), result === Player.NONE ? columnWinner(board, index) : result]
+    )(board[0])
+    if (tempVerticalWinner !== Player.NONE) return tempVerticalWinner
 
     const tempDiagonalWinner = diagonalWinner(board)
     if (tempDiagonalWinner !== Player.NONE) return tempDiagonalWinner
@@ -258,7 +278,7 @@ export function updateState(coordinates: Coordinates, state: GameState): GameSta
     return {
         winner: newBoard && winnerUpdatedBoard ? winnerUpdatedBoard.winner : state.winner, // Check winners of InnerStates
         turn: newBoard ? state.turn === Player.X ? Player.O : Player.X : state.turn,
-        board: newBoard && winnerUpdatedBoard ? updatePlayable(R.last(coordinates.data)!, winnerUpdatedBoard, !isBoardAtCoordinatesFull({data: [R.last(coordinates.data)!]}, state)) : state.board
+        board: newBoard && winnerUpdatedBoard ? updatePlayable(Opt.toUndefined(A.last(coordinates.data))!, winnerUpdatedBoard, !isBoardAtCoordinatesFull({data: [Opt.toUndefined(A.last(coordinates.data))!]}, state)) : state.board
     }
 }
 
