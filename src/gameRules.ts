@@ -7,6 +7,7 @@ import * as f from 'fp-ts/function'
 import * as Opt from 'fp-ts/Option'
 import * as Ord from 'fp-ts/Ord'
 import * as n from 'fp-ts/number'
+import * as N from 'fp-ts-std/Number'
 
 // Need to update game based on message
 // TODO update to use FP-TS
@@ -156,25 +157,16 @@ const asBoard = (item: BoardState | Player): BoardState => item as BoardState
 
 const asPlayer = (item: BoardState | Player): Player => item as Player
 
-const getWinnerOfCell = R.ifElse<(BoardState | Player)[], Player, Player>(
-    isBoard,
-    (item) => winnerOfBoard(asBoard(item).containedItems),
-    (item) => asPlayer(item)
-)
+const getWinnerOfCell = F.ifElse<BoardState | Player, Player>((item) => winnerOfBoard(asBoard(item).containedItems))((item) => asPlayer(item))(isBoard)
 
 // TODO extract and combine duplicated logic where possible
 const columnWinner = (board: BoardState[][] | Player[][], column: number): Player =>
     R.reduce<BoardState[] | Player[], Player | undefined>(
         (prevWinner, currentRow) =>
-            R.unless<Player | undefined, Player>(
+            F.unless<Player | undefined>(
                 (currentWinner) =>
-                    R.either(
-                        f.constant(R.isNil(prevWinner)),
-                        f.constant(R.equals(currentWinner, prevWinner))
-                    )(),
-                f.constant(Player.NONE),
-                getWinnerOfCell(currentRow[column])
-            ),
+                    B.or(R.isNil(prevWinner))(R.equals(currentWinner, prevWinner))
+            )(f.constant(Player.NONE))(getWinnerOfCell(currentRow[column])),
         undefined,
         board
     ) || Player.NONE
@@ -228,14 +220,14 @@ function diagonalWinner(board: BoardState[][] | Player[][]): Player {
 function winnerOfBoard(board: BoardState[][] | Player[][]): Player {
     const [, tempHorizontalWinner] = A.reduce<BoardState[] | Player[], [number, Player]>(
         [0, Player.NONE],
-        ([index, result]) => [R.inc(index), result === Player.NONE ? rowWinner(board, index) : result]
+        ([index, result]) => [N.increment(index), result === Player.NONE ? rowWinner(board, index) : result]
     )(board)
     if (tempHorizontalWinner !== Player.NONE) return tempHorizontalWinner
 
 
     const [, tempVerticalWinner] = A.reduce<BoardState | Player, [number, Player]>(
         [0, Player.NONE],
-        ([index, result]) => [R.inc(index), result === Player.NONE ? columnWinner(board, index) : result]
+        ([index, result]) => [N.increment(index), result === Player.NONE ? columnWinner(board, index) : result]
     )(board[0])
     if (tempVerticalWinner !== Player.NONE) return tempVerticalWinner
 
