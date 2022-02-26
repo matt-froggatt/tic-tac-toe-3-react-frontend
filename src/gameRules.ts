@@ -1,4 +1,3 @@
-import * as R from 'ramda'
 import * as B from 'fp-ts-std/Boolean'
 import * as s from 'fp-ts/string'
 import * as A from 'fp-ts/Array'
@@ -8,6 +7,7 @@ import * as Opt from 'fp-ts/Option'
 import * as Ord from 'fp-ts/Ord'
 import * as n from 'fp-ts/number'
 import * as N from 'fp-ts-std/Number'
+import * as E from 'fp-ts/Eq'
 
 // Need to update game based on message
 // TODO update to use FP-TS
@@ -21,6 +21,10 @@ export interface BoardState {
 type Coordinate = {
     x: number
     y: number
+}
+
+const eqCoordinate: E.Eq<Coordinate> = {
+    equals: (c1, c2) => B.and(n.Eq.equals(c1.x, c2.x))(n.Eq.equals(c1.y, c2.y))
 }
 
 export type Coordinates = {
@@ -37,6 +41,10 @@ export enum Player {
     X = "X",
     O = "O",
     NONE = ""
+}
+
+const eqPlayer: E.Eq<Player> = {
+    equals: (player1, player2) => player1 === player2
 }
 
 const EmptyCoordinates = {data: []};
@@ -103,7 +111,7 @@ const changeAtCoordinates = (value: Player, coordinates: Coordinates, board: Boa
                         arr[Opt.toUndefined(A.head(coordinates.data))!.x][Opt.toUndefined(A.head(coordinates.data))!.y]),
                     Opt.toUndefined(A.head(coordinates.data))!.y),
                 Opt.toUndefined(A.head(coordinates.data))!.x),
-            arr => changeAtIndex(
+            () => changeAtIndex(
                 board.containedItems,
                 changeAtIndex(board.containedItems[Opt.toUndefined(A.head(coordinates.data))!.x], value, Opt.toUndefined(A.head(coordinates.data))!.y),
                 Opt.toUndefined(A.head(coordinates.data))!.x
@@ -117,7 +125,7 @@ const firstCoordinate = (coordinates: Coordinates): Coordinate => Opt.toUndefine
 const restCoordinates = (coordinates: Coordinates): Coordinates => ({data: Opt.toUndefined(A.tail(coordinates.data))!})
 
 // TODO figure out how to replace ramda equals
-const isAnyEmpty: (squares: Player[][]) => boolean = A.some<Player[]>(A.some<Player>(player => R.equals(Player.NONE, player)))
+const isAnyEmpty: (squares: Player[][]) => boolean = A.some<Player[]>(A.some<Player>(player => eqPlayer.equals(Player.NONE, player)))
 
 // TODO make more readable
 const isBoardFull = (board: BoardState): boolean => isArrayOfBoardArray(board.containedItems) ?
@@ -142,13 +150,13 @@ const isBoardAtCoordinatesFull = (coordinates: Coordinates, state: GameState): b
 // TODO Determine how to replace ramda equals with FP-TS
 const updatePlayable = (playableCoordinate: Coordinate, board: BoardState, isParentPlayable = false, currentCoordinates: Coordinates = EmptyCoordinates): BoardState => ({
     winner: board.winner,
-    isPlayable: isParentPlayable || (firstCoordinate(currentCoordinates) && R.equals(playableCoordinate, firstCoordinate(currentCoordinates))),
+    isPlayable: isParentPlayable || (firstCoordinate(currentCoordinates) && eqCoordinate.equals(playableCoordinate, firstCoordinate(currentCoordinates))),
     containedItems: isArrayOfBoardArray(board.containedItems) ?
         board.containedItems.map(
             (array, x) =>
                 array.map(
                     (item, y) =>
-                        updatePlayable(playableCoordinate, item, isParentPlayable || (firstCoordinate(currentCoordinates) && R.equals(playableCoordinate, firstCoordinate(currentCoordinates))), updateCoordinates(currentCoordinates, x, y))
+                        updatePlayable(playableCoordinate, item, isParentPlayable || (firstCoordinate(currentCoordinates) && eqCoordinate.equals(playableCoordinate, firstCoordinate(currentCoordinates))), updateCoordinates(currentCoordinates, x, y))
                 )
         ) : board.containedItems
 })
@@ -161,31 +169,24 @@ const getWinnerOfCell = F.ifElse<BoardState | Player, Player>((item) => winnerOf
 
 // TODO extract and combine duplicated logic where possible
 const columnWinner = (board: BoardState[][] | Player[][], column: number): Player =>
-    R.reduce<BoardState[] | Player[], Player | undefined>(
+    Opt.getOrElse<Player>(f.constant(Player.NONE))(A.reduce<BoardState[] | Player[], Opt.Option<Player>>(
+        Opt.none,
         (prevWinner, currentRow) =>
-            F.unless<Player | undefined>(
+            F.unless<Opt.Option<Player>>(
                 (currentWinner) =>
-                    B.or(R.isNil(prevWinner))(R.equals(currentWinner, prevWinner))
-            )(f.constant(Player.NONE))(getWinnerOfCell(currentRow[column])),
-        undefined,
-        board
-    ) || Player.NONE
+                    B.or(Opt.isNone(prevWinner))(Opt.getEq(eqPlayer).equals(currentWinner, prevWinner))
+            )(f.constant(Opt.some(Player.NONE)))(Opt.some(getWinnerOfCell(currentRow[column])))
+    )(board))
 
 const rowWinner = (board: BoardState[][] | Player[][], row: number): Player =>
-    R.reduce<BoardState | Player, Player | undefined>(
+    Opt.getOrElse(f.constant(Player.NONE))(A.reduce<BoardState | Player, Opt.Option<Player>>(
+        Opt.none,
         (prevWinner, currentRow) =>
-            R.unless<Player | undefined, Player>(
+            F.unless<Opt.Option<Player>>(
                 (currentWinner) =>
-                    R.either(
-                        f.constant(R.isNil(prevWinner)),
-                        f.constant(R.equals(currentWinner, prevWinner))
-                    )(),
-                f.constant(Player.NONE),
-                getWinnerOfCell(currentRow)
-            ),
-        undefined,
-        board[row]
-    ) || Player.NONE
+                    B.or(Opt.isNone(prevWinner))(Opt.getEq(eqPlayer).equals(currentWinner, prevWinner))
+            )(f.constant(Opt.some(Player.NONE)))(Opt.some(getWinnerOfCell(currentRow)))
+    )(board[row]))
 
 
 // TODO update to use ramda
