@@ -10,8 +10,13 @@ import * as N from 'fp-ts-std/Number'
 import * as E from 'fp-ts/Eq'
 
 // Need to update game based on message
-// TODO update to use FP-TS
 // TODO add eslint
+export enum Player {
+    X = "X",
+    O = "O",
+    NONE = ""
+}
+
 export interface BoardState {
     winner: Player
     isPlayable: boolean
@@ -35,12 +40,6 @@ export interface GameState {
     winner: Player
     turn: Player
     board: BoardState
-}
-
-export enum Player {
-    X = "X",
-    O = "O",
-    NONE = ""
 }
 
 const eqPlayer: E.Eq<Player> = {
@@ -262,17 +261,17 @@ function updateWinner(board: BoardState): BoardState {
     return board
 }
 
+const getNewStateWrapper = (newBoard: BoardState, state: GameState, coordinates: Coordinates) =>
+    getNewState(newBoard, updateWinner(changeAtCoordinates(state.turn, coordinates, state.board)), state, coordinates)
+
+const getNewState = (newBoard: BoardState, winnerUpdatedBoard: BoardState | undefined, state: GameState, coordinates: Coordinates) => ({
+    winner: newBoard && winnerUpdatedBoard ? winnerUpdatedBoard.winner : state.winner, // Check winners of InnerStates
+    turn: newBoard ? state.turn === Player.X ? Player.O : Player.X : state.turn,
+    board: newBoard && winnerUpdatedBoard ? updatePlayable(Opt.toUndefined(A.last(coordinates.data))!, winnerUpdatedBoard, !isBoardAtCoordinatesFull({data: [Opt.toUndefined(A.last(coordinates.data))!]}, state)) : state.board
+})
+
 export function updateState(coordinates: Coordinates, state: GameState): GameState {
-    const newBoard = changeAtCoordinates(state.turn, coordinates, state.board);
-    let winnerUpdatedBoard
-
-    if (newBoard) winnerUpdatedBoard = updateWinner(newBoard)
-
-    return {
-        winner: newBoard && winnerUpdatedBoard ? winnerUpdatedBoard.winner : state.winner, // Check winners of InnerStates
-        turn: newBoard ? state.turn === Player.X ? Player.O : Player.X : state.turn,
-        board: newBoard && winnerUpdatedBoard ? updatePlayable(Opt.toUndefined(A.last(coordinates.data))!, winnerUpdatedBoard, !isBoardAtCoordinatesFull({data: [Opt.toUndefined(A.last(coordinates.data))!]}, state)) : state.board
-    }
+    return getNewStateWrapper(changeAtCoordinates(state.turn, coordinates, state.board), state, coordinates)
 }
 
 export default startState;
