@@ -1,10 +1,15 @@
-import {Coordinates, getBoardInfo, BoardState, isBoard, updateCoordinates} from "../../gameRules";
+import {
+    Coordinates,
+    BoardState,
+    updateCoordinates,
+    getBoardInfoAs2dArray, Player
+} from "../../gameRules";
 import Table from "./Table";
 import Cell from "./Cell";
 import React from "react";
 import IconFromText from "../Icons/IconFromPlayer";
 import {mapIndexed} from "../../Helpers/FunctionalUtilities";
-import * as R from "ramda";
+import * as E from "fp-ts/Either";
 
 interface GenTableProps {
     state: BoardState
@@ -22,31 +27,26 @@ const GenTable: React.FC<GenTableProps> = (
     }
 ) =>
     <Table isPlayable={state.isPlayable} isParentPlayable={isParentPlayable}>
-        {mapIndexed((i: number, outerItem: any) =>
-                mapIndexed((j: number, innerItem: any) =>
-                        R.ifElse(
-                            isBoard,
-                            R.always(
-                                <GenTable
-                                    state={innerItem}
-                                    coordinates={updateCoordinates(coordinates, i, j)}
-                                    updateState={updateState}
-                                    isParentPlayable={state.isPlayable}
-                                />
-                            ),
-                            R.always(
-                                <Cell
-                                    key={"1" + i + j}
-                                    onClickWhenPlayable={() => updateState(updateCoordinates(coordinates, i, j))}
-                                    isPlayable={state.isPlayable}
-                                >
-                                    <IconFromText player={innerItem}/>
-                                </Cell>
-                            )
+        {mapIndexed((i, outerItem) =>
+                mapIndexed((j, innerItem) =>
+                        E.match<BoardState, Player, JSX.Element>(
+                            bs => <GenTable
+                                state={bs}
+                                coordinates={updateCoordinates(coordinates, i, j)}
+                                updateState={updateState}
+                                isParentPlayable={state.isPlayable}
+                            />,
+                            pl => <Cell
+                                key={"1" + i + j}
+                                onClickWhenPlayable={() => updateState(updateCoordinates(coordinates, i, j))}
+                                isPlayable={state.isPlayable}
+                            >
+                                <IconFromText player={pl}/>
+                            </Cell>
                         )(innerItem),
                     outerItem
                 ),
-            getBoardInfo(state)
+            getBoardInfoAs2dArray(state)
         )}
     </Table>
 
