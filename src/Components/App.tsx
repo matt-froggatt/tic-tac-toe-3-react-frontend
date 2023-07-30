@@ -1,9 +1,10 @@
-import React, {useEffect, useState} from "react";
+import React, { useEffect, useState } from "react";
 import startState, {
     BoardState,
     Coordinates,
     createCoordinates,
-    getBoardFromState, Player,
+    getBoardFromState,
+    Player,
     GameState,
     updateState,
 } from "../gameRules";
@@ -11,9 +12,11 @@ import Board from "./Board/Board";
 import CurrentPlayer from "./Board/CurrentPlayer";
 import WinnerModal from "./WinnerModal";
 import IdModal from "./IdModal";
-import * as R from "ramda";
+import * as f from "fp-ts/lib/function";
 import * as ws from "../Helpers/FunctionalWebSockets";
 import * as utils from "../Helpers/FunctionalUtilities"
+import * as Opt from 'fp-ts/lib/Option'
+import * as m from 'monocle-ts'
 
 const URL = window.location.hostname + ":8080"
 
@@ -30,34 +33,34 @@ const useBoard = (): [BoardState, Player, Player, (c: Coordinates) => void, () =
     ]
 }
 
-const connectToWebSocket = R.pipe(
+const connectToWebSocket: (ws: WebSocket) => WebSocket = f.flow(
     utils.log("Attempting Connection..."),
     ws.onOpen(
-        R.pipe(
+        f.flow(
             utils.log("Successfully Connected"),
             ws.send("Hi From the Client!")
         )
     ),
     ws.onMessage(
-        R.pipe(
+        f.flow(
             ws.event,
-            R.prop('data'),
-            utils.logAndTransformData
+            m.Lens.fromProp<MessageEvent>()('data').get,
+            utils.logAndTransformData((data: any) => data) // This is just an example, modify the transform function as needed
         )
     ),
     ws.onClose(
-        R.pipe(
-            utils.logAndTransformData(ws.event, `Socket Closed Connection:`),
+        f.flow(
+            utils.logAndTransformData(([, event]: [WebSocket, CloseEvent]) => `Socket Closed Connection: ${event}`),
             ws.send("Client Closed!")
         )
     ),
-    ws.onError(utils.logAndTransformData(error => ["Socket Error: ", ws.event(error)]))
+    ws.onError((error: any) => utils.logAndTransformData(() => `Socket Error: ${error}`))
 )
 
 const coordinates = createCoordinates()
 
 function App() {
-    const [id,] = useState<number>()
+    const [id, setId] = useState<Opt.Option<number>>(Opt.none)
     const [gameStarted, setGameStarted] = useState<boolean>(false)
     const [board, winner, turn, playAtCoordinates, playAgain] = useBoard()
 
@@ -76,6 +79,7 @@ function App() {
                 <CurrentPlayer currentPlayer={turn}/>
             </div>
             <IdModal id={id} onIdSubmit={() => {
+                setId(Opt.none)
                 setGameStarted(true)
             }} gameStarted={gameStarted}/>
             <WinnerModal winner={winner} onPlayAgain={playAgain}/>

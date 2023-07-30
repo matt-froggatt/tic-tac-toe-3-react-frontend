@@ -1,4 +1,5 @@
-import * as R from 'ramda'
+import * as f from 'fp-ts/function'
+import * as F from 'fp-ts-std/Function'
 import React from "react";
 import {noOp} from "../../Helpers/FunctionalUtilities";
 
@@ -10,9 +11,9 @@ interface CellProps {
 
 const Cell: React.FC<CellProps> = ({onClickWhenPlayable, children, isPlayable}) =>
     <button
-        className={"w-12 h-12 flex items-center justify-center " + R.ifElse(R.always(isPlayable), R.always("cursor-pointer"), R.always("cursor-not-allowed"))()}
+        className={"w-12 h-12 flex items-center justify-center " + F.ifElse<boolean, string>(f.constant("cursor-pointer"))(f.constant("cursor-not-allowed"))(f.identity)(isPlayable)}
         type="button"
-        onClick={R.ifElse(R.always(isPlayable), onClickWhenPlayable, noOp)}
+        onClick={F.ifElse(onClickWhenPlayable)(noOp)(f.constant(isPlayable))}
     >
         {children}
     </button>

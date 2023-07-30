@@ -1,24 +1,24 @@
-import React, {useEffect, useState} from "react"
-import * as R from 'ramda'
+import React, {ChangeEvent, useEffect, useState} from "react"
 import Modal from "./Library/Modal";
 import GoodButton from "./Library/GoodButton";
+import * as f from "fp-ts/function";
+import * as Opt from 'fp-ts/Option'
+import * as m from "monocle-ts";
+
 
 interface IDModalProps {
-    id?: number
-    onIdSubmit: (id?: number) => void
+    id: Opt.Option<number>
+    onIdSubmit: (id: Opt.Option<number>) => void
     gameStarted: boolean
 }
 
-const IdModal: React.FC<IDModalProps> = ({id, onIdSubmit, gameStarted}) => {
+const IdModal: React.FC<IDModalProps> = ({ id, onIdSubmit, gameStarted}) => {
     const [isLoading, setIsLoading] = useState(true)
-    const [enteredValue, setEnteredValue] = useState<number>()
+    const [enteredValue, setEnteredValue] = useState<Opt.Option<number>>(Opt.none)
 
-    useEffect(() => R.pipe(R.isNil, setIsLoading)(id), [id])
+    useEffect(() => f.pipe(id, Opt.isNone, setIsLoading), [id])
 
-    return R.ifElse(
-        R.always(gameStarted),
-        R.always(null),
-        ({id, onIdSubmit}: IDModalProps) => (
+    return gameStarted ? (
             <Modal>
                 <div className="flex flex-col">
                     <div className="pb-2">
@@ -30,14 +30,13 @@ const IdModal: React.FC<IDModalProps> = ({id, onIdSubmit, gameStarted}) => {
                             className='border-b-2 border-black w-3/4'
                             placeholder="Enter friend's ID here"
                             type="number"
-                            onChange={R.pipe(R.pathOr('err', ['target', 'value']), parseInt, setEnteredValue)}
+                            onChange={f.flow((e) => m.Optional.fromPath<ChangeEvent<HTMLInputElement>>()(['target', 'value']).getOption(e), Opt.map(parseInt), setEnteredValue)}
                         />
                         <GoodButton onClick={() => onIdSubmit(enteredValue)}>Go!</GoodButton>
                     </div>
                 </div>
             </Modal>
-        )
-    )({id, onIdSubmit, gameStarted})
+        ) : null
 }
 
 export default IdModal

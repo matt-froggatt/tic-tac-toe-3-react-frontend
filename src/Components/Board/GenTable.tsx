@@ -1,15 +1,11 @@
-import {
-    Coordinates,
-    BoardState,
-    updateCoordinates,
-    getBoardInfoAs2dArray, Player
-} from "../../gameRules";
+import {BoardState, Coordinates, getBoardInfoAs2dArray, Player, updateCoordinates} from "../../gameRules";
 import Table from "./Table";
-import Cell from "./Cell";
 import React from "react";
-import IconFromText from "../Icons/IconFromPlayer";
-import {mapIndexed} from "../../Helpers/FunctionalUtilities";
 import * as E from "fp-ts/Either";
+import * as A from "fp-ts/Array";
+import * as Eit from 'fp-ts/Either'
+import Cell from "./Cell";
+import IconFromPlayer from "../Icons/IconFromPlayer";
 
 interface GenTableProps {
     state: BoardState
@@ -27,8 +23,8 @@ const GenTable: React.FC<GenTableProps> = (
     }
 ) =>
     <Table isPlayable={state.isPlayable} isParentPlayable={isParentPlayable}>
-        {mapIndexed((i, outerItem) =>
-                mapIndexed((j, innerItem) =>
+        {A.mapWithIndex((i, outerItem: Eit.Either<BoardState, Player>[]) =>
+                A.mapWithIndex((j, innerItem: Eit.Either<BoardState, Player>) =>
                         E.match<BoardState, Player, JSX.Element>(
                             bs => <GenTable
                                 state={bs}
@@ -41,11 +37,11 @@ const GenTable: React.FC<GenTableProps> = (
                                 onClickWhenPlayable={() => updateState(updateCoordinates(coordinates, i, j))}
                                 isPlayable={state.isPlayable}
                             >
-                                <IconFromText player={pl}/>
+                                <IconFromPlayer player={pl}/>
                             </Cell>
-                        )(innerItem),
+                        )(innerItem))(
                     outerItem
-                ),
+                ))(
             getBoardInfoAs2dArray(state)
         )}
     </Table>

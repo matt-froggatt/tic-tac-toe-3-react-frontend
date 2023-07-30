@@ -42,7 +42,7 @@ export interface GameState {
     board: BoardState
 }
 
-const eqPlayer: Eq.Eq<Player> = {
+export const eqPlayer: Eq.Eq<Player> = {
     equals: (player1, player2) => player1 === player2
 }
 

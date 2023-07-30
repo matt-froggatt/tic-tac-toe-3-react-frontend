@@ -1,6 +1,8 @@
-import * as R from 'ramda'
+import * as f from 'fp-ts/function'
+import * as F from 'fp-ts-std/Function'
+import * as m from 'monocle-ts'
 import React from "react";
-import {Player} from "../gameRules";
+import {eqPlayer, Player} from "../gameRules";
 import IconFromPlayer from "./Icons/IconFromPlayer";
 import Modal from "./Library/Modal";
 import GoodButton from "./Library/GoodButton";
@@ -13,9 +15,9 @@ interface WinnerProps {
 const WINNER: keyof WinnerProps = 'winner'
 
 const WinnerModal: React.FC<WinnerProps> =
-    R.ifElse(
-        R.propEq(WINNER, Player.NONE),
-        R.always(null),
+    F.ifElse<WinnerProps, React.ReactElement | null>(
+        f.constant(null)
+    )(
         ({winner, onPlayAgain}: WinnerProps) => (
             <Modal>
                 <div className='flex flex-col items-center'>
@@ -28,6 +30,11 @@ const WinnerModal: React.FC<WinnerProps> =
                     <GoodButton onClick={onPlayAgain}>Play again?</GoodButton>
                 </div>
             </Modal>
+        )
+    )(
+        f.flow(
+            m.Lens.fromProp<WinnerProps>()(WINNER).get,
+            prop => eqPlayer.equals(Player.NONE, prop)
         )
     )
 

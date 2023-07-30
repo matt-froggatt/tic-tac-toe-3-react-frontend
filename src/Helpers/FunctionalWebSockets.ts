@@ -26,7 +26,7 @@ export const onOpen = (fn: ([socket, event]: [WebSocket, Event]) => any) => (soc
 }
 
 // Returns a function which sends the given data through a websocket
-export const send = (data: string | ArrayBufferLike | Blob | ArrayBufferView) => <T>([socket, event]: [WebSocket, T]): [WebSocket, T] => {
+export const send = (data: string | ArrayBufferLike | Blob | ArrayBufferView) => <T>([socket, event]: [WebSocket, T]) => {
     socket.send(data)
     return [socket, event]
 }

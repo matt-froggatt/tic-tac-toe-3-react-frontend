@@ -1,4 +1,5 @@
-import * as R from 'ramda'
+import * as f from 'fp-ts/function'
+import * as F from 'fp-ts-std/Function'
 import React from "react";
 
 interface SelectBoxProps {
@@ -7,7 +8,7 @@ interface SelectBoxProps {
 }
 
 const SelectBox: React.FC<SelectBoxProps> = ({children, isSelected}) =>
-    <div className={R.ifElse(R.always(isSelected), R.always("bg-green-200 border-4 border-green-800 rounded-2xl p-1"), R.always("p-2"))()}>
+    <div className={F.ifElse<boolean, string>(f.constant("bg-green-200 border-4 border-green-800 rounded-2xl p-1"))(f.constant("p-2"))(f.identity)(isSelected)}>
         {children}
     </div>
 
