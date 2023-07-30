@@ -8,13 +8,13 @@ import * as m from "monocle-ts";
 
 interface IDModalProps {
     id: Opt.Option<number>
-    onIdSubmit: (id: Opt.Option<number>) => void
+    onIdSubmit: (id: Opt.Option<string>) => void
     gameStarted: boolean
 }
 
 const IdModal: React.FC<IDModalProps> = ({ id, onIdSubmit, gameStarted}) => {
     const [isLoading, setIsLoading] = useState(true)
-    const [enteredValue, setEnteredValue] = useState<Opt.Option<number>>(Opt.none)
+    const [enteredValue, setEnteredValue] = useState<Opt.Option<string>>(Opt.none)
 
     useEffect(() => f.pipe(id, Opt.isNone, setIsLoading), [id])
 
@@ -27,10 +27,11 @@ const IdModal: React.FC<IDModalProps> = ({ id, onIdSubmit, gameStarted}) => {
                     </div>
                     <div className="flex flex-row justify-between">
                         <input
-                            className='border-b-2 border-black w-3/4 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none'
+                            className='border-b-2 border-black w-3/4'
                             placeholder="Enter friend's ID here"
-                            type="number"
-                            onChange={f.flow((e) => m.Optional.fromPath<ChangeEvent<HTMLInputElement>>()(['target', 'value']).getOption(e), Opt.map(parseInt), setEnteredValue)}
+                            type="text"
+                            value={f.pipe(enteredValue, Opt.map(String), Opt.getOrElse(f.constant('')))}
+                            onInput={f.flow(m.Optional.fromPath<ChangeEvent<HTMLInputElement>>()(['target', 'value']).getOption, setEnteredValue)}
                         />
                         <GoodButton onClick={() => onIdSubmit(enteredValue)}>Go!</GoodButton>
                     </div>
