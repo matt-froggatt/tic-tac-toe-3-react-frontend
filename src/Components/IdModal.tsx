@@ -27,7 +27,7 @@ const IdModal: React.FC<IDModalProps> = ({ id, onIdSubmit, gameStarted}) => {
                     </div>
                     <div className="flex flex-row justify-between">
                         <input
-                            className='border-b-2 border-black w-3/4'
+                            className='border-b-2 border-black w-3/4 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none'
                             placeholder="Enter friend's ID here"
                             type="number"
                             onChange={f.flow((e) => m.Optional.fromPath<ChangeEvent<HTMLInputElement>>()(['target', 'value']).getOption(e), Opt.map(parseInt), setEnteredValue)}
