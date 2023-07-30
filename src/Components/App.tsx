@@ -17,6 +17,7 @@ import * as ws from "../Helpers/FunctionalWebSockets";
 import * as utils from "../Helpers/FunctionalUtilities"
 import * as Opt from 'fp-ts/lib/Option'
 import * as m from 'monocle-ts'
+import {TitleBar} from "./TitleBar";
 
 const URL = window.location.hostname + ":8080"
 
@@ -61,7 +62,7 @@ const coordinates = createCoordinates()
 
 function App() {
     const [id, setId] = useState<Opt.Option<number>>(Opt.none)
-    const [gameStarted, setGameStarted] = useState<boolean>(false)
+    const [gameStarted, setGameStarted] = useState<boolean>(true)
     const [board, winner, turn, playAtCoordinates, playAgain] = useBoard()
 
     useEffect(() => {
@@ -70,6 +71,7 @@ function App() {
 
     return (
         <div>
+            <TitleBar />
             <div className="flex flex-row items-center justify-center w-screen h-screen overflow-hidden">
                 <div className="flex flex-col items-center justify-center">
                     <Board
