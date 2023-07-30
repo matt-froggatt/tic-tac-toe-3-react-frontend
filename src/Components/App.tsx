@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, {useEffect, useState} from "react";
 import startState, {
     BoardState,
     Coordinates,
     createCoordinates,
+    GameState,
     getBoardFromState,
     Player,
-    GameState,
     updateState,
 } from "../gameRules";
 import Board from "./Board/Board";
@@ -69,14 +69,16 @@ function App() {
     }, [])
 
     return (
-        <div className="flex flex-row items-center justify-center w-screen h-screen overflow-hidden">
-            <div className="flex flex-col items-center justify-center">
-                <Board
-                    state={board}
-                    coordinates={coordinates}
-                    updateState={playAtCoordinates}
-                />
-                <CurrentPlayer currentPlayer={turn}/>
+        <div>
+            <div className="flex flex-row items-center justify-center w-screen h-screen overflow-hidden">
+                <div className="flex flex-col items-center justify-center">
+                    <Board
+                        state={board}
+                        coordinates={coordinates}
+                        updateState={playAtCoordinates}
+                    />
+                    <CurrentPlayer currentPlayer={turn}/>
+                </div>
             </div>
             <IdModal id={id} onIdSubmit={() => {
                 setId(Opt.none)

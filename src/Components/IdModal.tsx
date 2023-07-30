@@ -18,7 +18,7 @@ const IdModal: React.FC<IDModalProps> = ({ id, onIdSubmit, gameStarted}) => {
 
     useEffect(() => f.pipe(id, Opt.isNone, setIsLoading), [id])
 
-    return gameStarted ? (
+    return !gameStarted ? (
             <Modal>
                 <div className="flex flex-col">
                     <div className="pb-2">
