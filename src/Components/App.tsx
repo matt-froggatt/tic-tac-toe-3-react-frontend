@@ -13,14 +13,31 @@ import CurrentPlayer from "./Board/CurrentPlayer";
 import WinnerModal from "./WinnerModal";
 import IdModal from "./IdModal";
 import * as f from "fp-ts/lib/function";
-import * as ws from "../Helpers/FunctionalWebSockets";
+import * as socketfns from "../Helpers/FunctionalWebSockets";
 import * as utils from "../Helpers/FunctionalUtilities"
 import * as Opt from 'fp-ts/lib/Option'
+import * as Eit from 'fp-ts/lib/Either'
 import * as m from 'monocle-ts'
+import * as F from "fp-ts-std/Function";
+import * as str from "fp-ts/string"
+import * as io from "io-ts"
+import { json, number } from "fp-ts";
+
+interface GameMessage {
+    command: string
+    id?: number
+}
+
+enum CommandType {
+    SetId = "respondId"
+}
 
 const URL = window.location.hostname + ":8080"
 
-const socket = ws.create(URL)
+const socket = socketfns.create(URL)
+
+const isCommandOfType = (commandType: CommandType) => (gameMessage: GameMessage) =>
+str.Eq.equals(m.Lens.fromProp<GameMessage>()('command').get(gameMessage), commandType)
 
 const useBoard = (): [BoardState, Player, Player, (c: Coordinates) => void, () => void] => {
     const [state, setState] = useState<GameState>(startState)
@@ -33,28 +50,33 @@ const useBoard = (): [BoardState, Player, Player, (c: Coordinates) => void, () =
     ]
 }
 
-const connectToWebSocket: (ws: WebSocket) => WebSocket = f.flow(
+const connectToWebSocket: (setId: (id: Opt.Option<number>) => void) => (ws: WebSocket) => WebSocket = (setId) => f.flow(
     utils.log("Attempting Connection..."),
-    ws.onOpen(
+    socketfns.onOpen(
         f.flow(
             utils.log("Successfully Connected"),
-            ws.send("Hi From the Client!")
+            socketfns.send(JSON.stringify({ "command": "requestId" })),
         )
     ),
-    ws.onMessage(
+    socketfns.onMessage(
         f.flow(
-            ws.event,
+            socketfns.event,
             m.Lens.fromProp<MessageEvent>()('data').get,
-            utils.logAndTransformData((data: any) => data) // This is just an example, modify the transform function as needed
+            utils.logValue, // This is just an example, modify the transform function as needed
+            JSON.parse,
+            (r) => r as GameMessage,
+            F.guard<GameMessage, any>([
+                [isCommandOfType(CommandType.SetId), f.flow(m.Lens.fromProp<GameMessage>()('id').get, Opt.fromNullable, setId)],
+                ])(utils.logAndTransformData((data) => "Unrecognized command: " + JSON.stringify(data)))
         )
     ),
-    ws.onClose(
+    socketfns.onClose(
         f.flow(
             utils.logAndTransformData(([, event]: [WebSocket, CloseEvent]) => `Socket Closed Connection: ${event}`),
-            ws.send("Client Closed!")
+            socketfns.send("Client Closed!")
         )
     ),
-    ws.onError((error: any) => utils.logAndTransformData(() => `Socket Error: ${error}`))
+    socketfns.onError((error: any) => utils.logAndTransformData(() => `Socket Error: ${error}`))
 )
 
 const coordinates = createCoordinates()
@@ -65,7 +87,7 @@ function App() {
     const [board, winner, turn, playAtCoordinates, playAgain] = useBoard()
 
     useEffect(() => {
-        connectToWebSocket(socket)
+        connectToWebSocket(setId)(socket)
     }, [])
 
     return (
