@@ -1,3 +1,9 @@
+import * as str from 'fp-ts/string'
+import * as f from 'fp-ts/function'
+import * as m from 'monocle-ts'
+import * as utils from './FunctionalUtilities'
+import { Coordinates, Player } from '../gameRules'
+
 // Creates and returns a new websocket from the given URL
 export const create = (URL: any): WebSocket => new WebSocket(`ws://${URL}/ws`)
 
@@ -25,11 +31,40 @@ export const onOpen = (fn: ([socket, event]: [WebSocket, Event]) => any) => (soc
     return socket
 }
 
+
 // Returns a function which sends the given data through a websocket
-export const send = (data: string | ArrayBufferLike | Blob | ArrayBufferView) => <T>([socket, event]: [WebSocket, T]): [WebSocket, T] => {
+export const send = (data: string | ArrayBufferLike | Blob | ArrayBufferView) => (socket: WebSocket): WebSocket => {
     socket.send(data)
-    return [socket, event]
+    return socket
 }
 
-// Get the current event for use in logging functions inside of event handlers
-export const event = <T>([, event]: [WebSocket, T]) => event
+/**
+ * For messages to backend
+ */
+
+export interface GameMessage {
+    command: string
+    id: number
+}
+
+export interface MoveMessage extends GameMessage {
+    player: Player
+    coordinates: {x: number, y: number}[]
+}
+
+export enum RequestCommand {
+    RequestId = "requestId",
+    JoinGame = "joinGame",
+    MakeMove = "makeMove",
+}
+
+export enum ResponseCommand {
+    SetId = "respondId",
+    JoinGameFailed = "errorIdNotFound",
+    JoinGameSucceeded = "successIdFound",
+    UpdateBoardFromMove = "updateBoardFromMove"
+}
+
+// Check if message is of given command type
+export const isCommandOfType = (commandType: ResponseCommand) => (gameMessage: GameMessage) =>
+str.Eq.equals(m.Lens.fromProp<GameMessage>()('command').get(gameMessage), commandType)

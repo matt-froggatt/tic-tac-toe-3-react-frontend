@@ -2,15 +2,22 @@ import * as B from 'fp-ts-std/Boolean'
 import * as b from 'fp-ts/boolean'
 import * as s from 'fp-ts/string'
 import * as A from 'fp-ts/Array'
+import * as Arr from 'fp-ts-std/Array'
 import * as F from 'fp-ts-std/Function'
 import * as f from 'fp-ts/function'
 import * as Opt from 'fp-ts/Option'
 import * as n from 'fp-ts/number'
-import * as N from 'fp-ts-std/Number'
 import * as Eq from 'fp-ts/Eq'
 import * as Eit from 'fp-ts/Either'
+import * as P from 'fp-ts/Predicate'
+import * as wsfns from './Helpers/FunctionalWebSockets'
+import * as utils from './Helpers/FunctionalUtilities'
 
-// TODO add eslint
+
+/**
+ * Type Definitions
+ */
+
 export enum Player {
     X = "X",
     O = "O",
@@ -28,22 +35,75 @@ type Coordinate = {
     y: number
 }
 
-const eqCoordinate: Eq.Eq<Coordinate> = {
-    equals: (c1, c2) => B.and(n.Eq.equals(c1.x, c2.x))(n.Eq.equals(c1.y, c2.y))
-}
+export type Coordinates = Coordinate[]
 
-export type Coordinates = {
-    data: Coordinate[]
+interface Move {
+    player: Player
+    coordinates: Coordinates
 }
 
 export interface GameState {
-    winner: Player
     turn: Player
     board: BoardState
 }
 
+
+/**
+ * Generic Helper Functions
+ */
+
+const generate2dArrayOf = <T>(itemCreator: () => T, width: number, height: number): T[][] => A.makeBy(height, () => A.makeBy(width, itemCreator))
+
+const getDiagonalArray = (isAntiDiagonal: boolean) => <T>(array: T[][]): T[] => A.flatten(
+    A.mapWithIndex<T[], T[]>(
+        (i, a) => A.filterMapWithIndex<T, T>(
+            (j, item) => n.Eq.equals(i, j) ? Opt.some(item) : Opt.none
+        )(
+            F.ifElse<T[], T[]>(A.reverse)(f.identity)(f.constant(isAntiDiagonal))(a)
+        )
+    )(array)
+)
+
+const getDiagonalArrays = <T>(array: T[][]): T[][] => [getDiagonalArray(false)(array), getDiagonalArray(true)(array)]
+
+const updateAtCoordinate = <T>(coordinate: Coordinate, fn: (val: T) => T) => (matrix: T[][]): T[][] => f.pipe(
+    Opt.Do,
+    Opt.bind('row', f.constant(A.lookup(coordinate.x, matrix))),
+    Opt.bind('item', ({ row }) => A.lookup(coordinate.y, row)),
+    Opt.chain(({ row, item }) =>
+        f.pipe(
+            A.updateAt(coordinate.y, fn(item))(row),
+            Opt.chain((updatedRow) =>
+                A.updateAt(coordinate.x, updatedRow)(matrix) // Update the entire matrix
+            )
+        )),
+    Opt.getOrElse(f.constant(matrix))
+)
+
+const twoDimensionEvery = <T>(predicate: P.Predicate<T>) => (array: T[][]) => f.pipe(array, A.flatten, A.every(predicate))
+
+const allItemsEqual = <T>(equal: Eq.Eq<T>) => (array: T[]) =>
+    f.pipe(
+        A.head(array),
+        Opt.match(
+            f.constFalse,
+            f.flow(
+                F.curry2(equal.equals),
+                F.flip(A.every)(array)
+            )
+        )
+    )
+
+/**
+ * Equality Constants
+ */
+
 export const eqPlayer: Eq.Eq<Player> = {
     equals: (player1, player2) => player1 === player2
+}
+
+const eqPlayerNotNone: Eq.Eq<Player> = {
+    equals: (player1, player2) => B.and(eqPlayer.equals(player1, player2))(isPlayerNotNone(player1))
 }
 
 const eqBoardState: Eq.Eq<BoardState> = {
@@ -56,88 +116,31 @@ const eqBoardState: Eq.Eq<BoardState> = {
 
 const eqBoardStateContained = Eit.getEq(A.getEq(A.getEq(eqBoardState)), A.getEq(A.getEq(eqPlayer)))
 
-const EmptyCoordinates = {data: []};
+const eqCoordinate: Eq.Eq<Coordinate> = {
+    equals: (c1, c2) => B.and(n.Eq.equals(c1.x, c2.x))(n.Eq.equals(c1.y, c2.y))
+}
 
-export const isBoard = (state: any): state is BoardState => B.invert(s.Eq.equals(typeof state, "string"))
+const eqCoorinates: Eq.Eq<Coordinates> = {
+    equals: (cs1: Coordinates, cs2: Coordinates) => A.getEq(eqCoordinate).equals(cs1, cs2)
+}
+
+/**
+ * Getter Functions
+ */
+
+export const getGameWinner = (state: GameState) => state.board.winner
+
+const getFirstCoordinate = (coordinates: Coordinates) => A.head(coordinates)
+
+const getRestCoordinates = (coordinates: Coordinates) => A.tail(coordinates)
+
+const getNoPlayer = f.constant<Player>(Player.NONE)
+
+const getBoardWinner = (board: BoardState) => board.winner
 
 export const getBoardFromState = (state: GameState): BoardState => state.board
 
-export const createCoordinates = () => ({data: []})
-
-export const updateCoordinates = (coordinates: Coordinates, x: number, y: number): Coordinates => ({
-    data: A.append({
-        x: x,
-        y: y
-    })(coordinates.data)
-})
-
-export const getBoardInfo = (state: BoardState): Eit.Either<BoardState[][], Player[][]> => state.containedItems
-
-export const getBoardInfoAs2dArray = (state: BoardState): Eit.Either<BoardState, Player>[][] => A.map(eitherOfArrayToArrayOfEither)(eitherOfArrayToArrayOfEither(getBoardInfo(state)))
-
-const generate2dArrayOf = <T>(itemCreator: () => T, width: number, height: number): T[][] => A.makeBy(height, () => A.makeBy(width, itemCreator))
-
-const generateStartInnerBoard = (levels = 2, width = 3, height = 3): BoardState => ({
-    winner: Player.NONE,
-    isPlayable: true,
-    containedItems: levels === 1 ?
-        Eit.right(generate2dArrayOf(f.constant(Player.NONE), width, height)) :
-        Eit.left(generate2dArrayOf(f.constant(generateStartInnerBoard(levels - 1, width, height)), width, height))
-})
-
-const generateStartState = (levels = 2, width = 3, height = 3): GameState => ({
-        winner: Player.NONE,
-        turn: Player.X,
-        board: generateStartInnerBoard(levels, width, height)
-    }
-)
-
-const startState = generateStartState()
-
-const changeAtIndex = <T>(array: T[], value: T, index: number): T[] => Opt.getOrElse<T[]>(f.constant([]))(A.updateAt(index, value)(array))
-
-const coordinatesFromArray = (array: Coordinate[]): Coordinates => ({data: array})
-
-const changeAtCoordinates = (value: Player, coordinates: Coordinates, board: BoardState): BoardState => ({
-    winner: board.winner,
-    isPlayable: board.isPlayable,
-    containedItems:
-        Eit.match<BoardState[][], Player[][], Eit.Either<BoardState[][], Player[][]>>(
-            arr => Eit.left(changeAtIndex(
-                arr,
-                changeAtIndex(arr[Opt.toUndefined(A.head(coordinates.data))!.x],
-                    changeAtCoordinates(value, coordinatesFromArray(Opt.toUndefined(A.tail(coordinates.data))!),
-                        arr[Opt.toUndefined(A.head(coordinates.data))!.x][Opt.toUndefined(A.head(coordinates.data))!.y]),
-                    Opt.toUndefined(A.head(coordinates.data))!.y),
-                Opt.toUndefined(A.head(coordinates.data))!.x)),
-            arr => Eit.right(changeAtIndex(
-                arr,
-                changeAtIndex(arr[Opt.toUndefined(A.head(coordinates.data))!.x], value, Opt.toUndefined(A.head(coordinates.data))!.y),
-                Opt.toUndefined(A.head(coordinates.data))!.x)
-            )
-        )(board.containedItems)
-})
-
-const firstCoordinate = (coordinates: Coordinates): Opt.Option<Coordinate> => A.head(coordinates.data)
-
-const restCoordinates = (coordinates: Coordinates): Opt.Option<Coordinates> =>
-    Opt.map<Coordinate[], Coordinates>(a => ({data: a}))(A.tail(coordinates.data))
-
-const isAnyEmpty: (squares: Player[][]) => boolean = A.some<Player[]>(A.some<Player>(player => eqPlayer.equals(Player.NONE, player)))
-
-const isBoardFull = (board: BoardState): boolean => Eit.match<BoardState[][], Player[][], boolean>(
-    arr => A.reduce<BoardState[], boolean>(
-        false as boolean,
-        (value, item) =>
-            value ||
-            A.reduce<BoardState, boolean>(
-                false as boolean,
-                (value, item) =>
-                    value || isBoardFull(item))(item))(
-        arr
-    ),
-    arr => isAnyEmpty(arr)
-)(board.containedItems)
+export const getBoardContents = (state: BoardState): Eit.Either<BoardState[][], Player[][]> => state.containedItems
 
 const getBoardAtCoordinatesWrapped = (
     firstCoord: Opt.Option<Coordinate>,
@@ -148,168 +151,206 @@ const getBoardAtCoordinatesWrapped = (
         b => Opt.match<Coordinate, BoardState>(
             f.constant(board),
             first => getBoardAtCoordinatesWrapped(
-                Opt.chain(firstCoordinate)(restCoords),
-                Opt.chain(restCoordinates)(restCoords),
+                Opt.chain(A.head)(restCoords),
+                Opt.chain(A.tail)(restCoords),
                 b[first.x][first.y]
             )
         )(firstCoord),
         f.constant(board)
-    )(getBoardInfo(board))
-// coordinates === EmptyCoordinates || !isArrayOfBoardArray(board.containedItems) ?
-// board :
-// getBoardAtCoordinates(restCoordinates(coordinates), board.containedItems[firstCoordinate(coordinates).x][firstCoordinate(coordinates).y])
+    )(getBoardContents(board))
 
-const getBoardAtCoordinates = (coordinates: Coordinates, board: BoardState):
-    BoardState => getBoardAtCoordinatesWrapped(firstCoordinate(coordinates), restCoordinates(coordinates), board)
+const getBoardAtCoordinates = (coordinates: Coordinates) => (board: BoardState):
+    BoardState => getBoardAtCoordinatesWrapped(A.head(coordinates), A.tail(coordinates), board)
 
-const isBoardAtCoordinatesFull = (coordinates: Coordinates, state: GameState): boolean =>
-    isBoardFull(getBoardAtCoordinates(coordinates, getBoardFromState(state)))
+/**
+ * Init Functions
+ */
 
-const updatePlayable = (playableCoordinate: Coordinate, board: BoardState, isParentPlayable = false, currentCoordinates: Coordinates = EmptyCoordinates): BoardState => ({
-    winner: board.winner,
-    isPlayable: isParentPlayable || (firstCoordinate(currentCoordinates) && Opt.getEq(eqCoordinate).equals(Opt.some(playableCoordinate), firstCoordinate(currentCoordinates))),
-    containedItems: Eit.match<BoardState[][], Player[][], Eit.Either<BoardState[][], Player[][]>>(
-        arr => Eit.left(arr.map(
-            (array, x) =>
-                array.map(
-                    (item, y) =>
-                        updatePlayable(
-                            playableCoordinate,
-                            item,
-                            isParentPlayable || (firstCoordinate(currentCoordinates) && Opt.getEq(eqCoordinate).equals(Opt.some(playableCoordinate), firstCoordinate(currentCoordinates))),
-                            updateCoordinates(currentCoordinates, x, y))
-                )
-        )),
-        Eit.right
-    )(board.containedItems)
+export const createEmptyCoordinates = () => (EmptyCoordinates)
+
+const createCoorinatesFromCoordinate = (coordinate: Coordinate) => updateCoordinates(createEmptyCoordinates(), coordinate)
+
+export const createCoordinate = (x: number, y: number): Coordinate => ({ x, y })
+
+const generateStartInnerBoard = (levels = 2, width = 3, height = 3): BoardState => ({
+    winner: Player.NONE,
+    isPlayable: true,
+    containedItems: levels === 1 ?
+        Eit.right(generate2dArrayOf(getNoPlayer, width, height)) :
+        Eit.left(generate2dArrayOf(f.constant(generateStartInnerBoard(levels - 1, width, height)), width, height))
 })
 
-const getWinnerOfCell = Eit.match<BoardState, Player, Player>((item) =>
-    winnerOfBoard(item.containedItems), (item) => item)
+const generateStartState = (levels = 2, width = 3, height = 3): GameState => ({
+    turn: Player.X,
+    board: generateStartInnerBoard(levels, width, height)
+})
 
-// TODO extract and combine duplicated logic where possible
-const columnWinner = (board: Eit.Either<BoardState[][], Player[][]>, column: number): Player =>
-    Opt.getOrElse<Player>(f.constant(Player.NONE))(A.reduce<Eit.Either<BoardState, Player>[], Opt.Option<Player>>(
-        Opt.none,
-        (prevWinner, currentRow) =>
-            F.unless<Opt.Option<Player>>(
-                (currentWinner) =>
-                    B.or(Opt.isNone(prevWinner))(Opt.getEq(eqPlayer).equals(currentWinner, prevWinner))
-            )(f.constant(Opt.some(Player.NONE)))(Opt.some(getWinnerOfCell(currentRow[column])))
-    )(
-        Eit.match<BoardState[][], Player[][], Eit.Either<BoardState, Player>[][]>(
-            left => A.map(A.map(Eit.left))(left), right => A.map(A.map(Eit.right))(right)
-        )(board)
-    ))
+/**
+ * Useful Constants
+ */
 
-const rowWinner = (board: Eit.Either<BoardState[][], Player[][]>, row: number): Player =>
-    Opt.getOrElse(f.constant(Player.NONE))(A.reduce<Eit.Either<BoardState, Player>, Opt.Option<Player>>(
-            Opt.none,
-            (prevWinner, currentRow) =>
-                F.unless<Opt.Option<Player>>(
-                    (currentWinner) =>
-                        B.or(Opt.isNone(prevWinner))(Opt.getEq(eqPlayer).equals(currentWinner, prevWinner))
-                )(f.constant(Opt.some(Player.NONE)))(Opt.some(getWinnerOfCell(currentRow)))
-        )(
-            Eit.match<BoardState[][], Player[][], Eit.Either<BoardState, Player>[]>(
-                left => A.map(Eit.left)(left[row]), right => A.map(Eit.right)(right[row])
-            )(board)
-        )
+const EmptyCoordinates: Coordinates = [];
+
+const startState = generateStartState()
+
+
+/**
+ * Predicate Functions
+ */
+
+export const isBoard = (state: any): state is BoardState => B.invert(s.Eq.equals(typeof state, "string"))
+
+const isPlayerNone = F.curry2(eqPlayer.equals)(Player.NONE)
+const isPlayerNotNone = f.flow(isPlayerNone, B.invert)
+
+const doesBoardHaveWinner = f.flow(getBoardWinner, isPlayerNone, B.invert)
+
+const isBoardFull = (board: BoardState): boolean => f.pipe(
+    getBoardContents(board),
+    Eit.match(
+        twoDimensionEvery(isBoardFull),
+        twoDimensionEvery(isPlayerNotNone)
     )
-
-const getDiagonalArray = <T>(array: T[][], isAntiDiagonal: boolean = false): T[] => A.flatten(
-    A.mapWithIndex<T[], T[]>(
-        (i, a) => A.filterMapWithIndex<T, T>(
-            (j, item) => n.Eq.equals(i, j) ? Opt.some(item) : Opt.none
-        )(
-            F.ifElse<T[], T[]>(A.reverse)(f.identity)(f.constant(isAntiDiagonal))(a)
-        )
-    )(array)
 )
 
-const eitherOfArrayToArrayOfEither = <T, U>(either: Eit.Either<T[], U[]>): Eit.Either<T, U>[] =>
-    Eit.match<T[], U[], Eit.Either<T, U>[]>(
-        left => A.map(Eit.left)(left), right => A.map(Eit.right)(right)
-    )(either)
+const isBoardAtCoordinatesFull = (coordinates: Coordinates, state: GameState): boolean =>f.pipe(
+    getBoardFromState(state),
+    getBoardAtCoordinates(coordinates),
+    isBoardFull
+)
 
-const arrayWinner = (arr: Eit.Either<BoardState, Player>[]): Player =>
-    Opt.match<Eit.Either<BoardState, Player>, Player>(
-        f.constant(Player.NONE),
-        item => f.flow<[Eit.Either<BoardState, Player>], Player, Player>(
-            getWinnerOfCell,
-            F.ifElse<Player, Player>(
-                f.identity
-            )(
-                f.constant(Player.NONE)
-            )(
-                potentialWinner =>
-                    A.every<Eit.Either<BoardState, Player>>(
-                        cell => eqPlayer.equals(getWinnerOfCell(cell), potentialWinner)
-                    )(arr)
+/**
+ * Update functions
+ */
+
+const switchPlayer = (p: Player) => eqPlayer.equals(p, Player.X) ? Player.O : Player.X
+
+export const updateCoordinates = (coordinates: Coordinates, additionalCoordinate: Coordinate): Coordinates => A.append(additionalCoordinate)(coordinates)
+
+const newUpdateBoardWithMove = (move: Move) => (board: BoardState): BoardState => f.pipe(
+    Opt.Do,
+    Opt.bind('head', f.constant(getFirstCoordinate(move.coordinates))),
+    Opt.bind('tail', f.constant(getRestCoordinates(move.coordinates))),
+    Opt.map(
+        ({ head, tail }) => ({
+            winner: board.winner,
+            isPlayable: board.isPlayable,
+            containedItems:
+                Eit.bimap(
+                    updateAtCoordinate(
+                        head,
+                        newUpdateBoardWithMove({ player: move.player, coordinates: tail })
+                    ),
+                    updateAtCoordinate(head, f.constant(move.player))
+                )(board.containedItems)
+        })
+    ),
+    Opt.getOrElse(f.constant(board))
+)
+
+const updatePlayable = (
+    playableCoordinate: Coordinates,
+    board: BoardState,
+    isParentPlayable = false,
+    currentCoordinates: Coordinates = EmptyCoordinates,
+    isThisBoardPlayable = B.or(isParentPlayable)(
+        eqCoorinates.equals(
+            playableCoordinate, currentCoordinates
+        )
+    )): BoardState => ({
+        winner: board.winner,
+        isPlayable: isThisBoardPlayable,
+        containedItems: Eit.mapLeft<BoardState[][], BoardState[][]>(
+            A.mapWithIndex<BoardState[], BoardState[]>(
+                (x, array) =>
+                    A.mapWithIndex<BoardState, BoardState>(
+                        (y, item) =>
+                            updatePlayable(
+                                playableCoordinate,
+                                item,
+                                isThisBoardPlayable,
+                                updateCoordinates(currentCoordinates, createCoordinate(x, y)))
+                    )(array)
             )
-        )(item)
-    )(A.head(arr))
-
-const antiDiagonalWinner = (board: Eit.Either<BoardState[][], Player[][]>): Player =>
-    diagonalWinner(board, true)
-
-const diagonalWinner = (board: Eit.Either<BoardState[][], Player[][]>, isAntiDiagonal: boolean = false): Player =>
-    arrayWinner(getDiagonalArray(A.map(eitherOfArrayToArrayOfEither)(eitherOfArrayToArrayOfEither(board)), isAntiDiagonal))
-
-
-function winnerOfBoard(board: Eit.Either<BoardState[][], Player[][]>): Player {
-    const [, tempHorizontalWinner] = A.reduce<Eit.Either<BoardState[], Player[]>, [number, Player]>(
-        [0, Player.NONE],
-        ([index, result]) => [N.increment(index), result === Player.NONE ? rowWinner(board, index) : result]
-    )(eitherOfArrayToArrayOfEither(board))
-    if (tempHorizontalWinner !== Player.NONE) return tempHorizontalWinner
-
-
-    const [, tempVerticalWinner] = A.reduce<Eit.Either<BoardState, Player>, [number, Player]>(
-        [0, Player.NONE],
-        ([index, result]) => [N.increment(index), result === Player.NONE ? columnWinner(board, index) : result]
-    )(eitherOfArrayToArrayOfEither(eitherOfArrayToArrayOfEither(board)[0]))
-    if (tempVerticalWinner !== Player.NONE) return tempVerticalWinner
-
-    const tempDiagonalWinner = diagonalWinner(board)
-    if (tempDiagonalWinner !== Player.NONE) return tempDiagonalWinner
-
-    const tempAntiDiagonalWinner = antiDiagonalWinner(board)
-    if (tempAntiDiagonalWinner !== Player.NONE) return tempAntiDiagonalWinner
-
-    return Player.NONE
-}
-
-const updateWinnerWrapped = (board: BoardState, containedItemsUpdated: f.Lazy<Eit.Either<BoardState[][], Player[][]>>): BoardState =>
-    (board.winner === Player.NONE) ? ({
-            ...board,
-            winner: winnerOfBoard(containedItemsUpdated()),
-            containedItems: containedItemsUpdated()
-        }) :
-        board
-
-const updateWinner = (board: BoardState): BoardState => updateWinnerWrapped(
-    board,
-    f.constant(
-        Eit.match <BoardState[][], Player[][], Eit.Either<BoardState[][], Player[][]>>(
-            (b) => Eit.left<BoardState[][], Player[][]>(
-                b.map(array => array.map(item => updateWinner(item)))
-            ),
-            (Eit.right)
         )(board.containedItems)
+    })
+
+const calculateHorizontalWinnerOfPlayerBoard =
+    f.flow(
+        A.map<Player[], Opt.Option<Player>>(
+            F.guard<Player[], Opt.Option<Player>>(
+                [[allItemsEqual(eqPlayerNotNone), A.head]]
+            )(f.constant(Opt.none)),
+        ),
+        A.compact,
+        A.head,
+        Opt.getOrElse(getNoPlayer)
     )
+
+const getCalculateWinnerFunction = (modifyBoardContents: <A>(boardContents: A[][]) => A[][]) => (boardContents: Eit.Either<BoardState[][], Player[][]>): Player =>
+    Eit.match<BoardState[][], Player[][], Player>(
+        f.flow(
+            modifyBoardContents,
+            A.map(A.map(f.flow(getBoardContents, getCalculateWinnerFunction(modifyBoardContents)))),
+            calculateHorizontalWinnerOfPlayerBoard
+        ),
+        f.flow(modifyBoardContents, calculateHorizontalWinnerOfPlayerBoard)
+    )(boardContents)
+
+const calculateHorizontalWinner = getCalculateWinnerFunction(f.identity)
+
+const calculateVerticalWinner = getCalculateWinnerFunction(Arr.transpose)
+
+const calculateDiagonalWinner = getCalculateWinnerFunction(getDiagonalArrays)
+
+const winnerOfBoard = (board: BoardState): Player =>
+    F.guard([[doesBoardHaveWinner, getBoardWinner]])(
+        (board) =>
+            f.pipe(
+                [
+                    calculateHorizontalWinner,
+                    calculateVerticalWinner,
+                    calculateDiagonalWinner
+                ],
+                A.flap(getBoardContents(board)),
+                A.filter(isPlayerNotNone),
+                A.head,
+                Opt.getOrElse<Player>(getNoPlayer)
+            )
+    )(board)
+
+const newUpdateWinner: (board: BoardState) => BoardState = F.when(
+    f.flow(
+        getBoardWinner,
+        isPlayerNone
+    )
+)(
+    (board: BoardState) => ({
+        ...board,
+        winner: winnerOfBoard(board),
+        containedItems: f.pipe(
+            getBoardContents(board),
+            Eit.mapLeft(A.map(A.map(newUpdateWinner)))
+        )
+    })
 )
 
-const getNewStateWrapper = (newBoard: BoardState, state: GameState, coordinates: Coordinates) =>
-    getNewState(newBoard, updateWinner(changeAtCoordinates(state.turn, coordinates, state.board)), state, coordinates)
-
-const getNewState = (newBoard: BoardState, winnerUpdatedBoard: BoardState | undefined, state: GameState, coordinates: Coordinates) => ({
-    winner: newBoard && winnerUpdatedBoard ? winnerUpdatedBoard.winner : state.winner,
-    turn: newBoard ? state.turn === Player.X ? Player.O : Player.X : state.turn,
-    board: newBoard && winnerUpdatedBoard ? updatePlayable(Opt.toUndefined(A.last(coordinates.data))!, winnerUpdatedBoard, !isBoardAtCoordinatesFull({data: [Opt.toUndefined(A.last(coordinates.data))!]}, state)) : state.board
+const updateState = (winnerUpdatedBoard: BoardState, state: GameState, move: Move) => ({
+    turn: switchPlayer(move.player),
+    board: f.pipe(
+        A.last(move.coordinates),
+        Opt.map((lastCoord) =>
+            updatePlayable(createCoorinatesFromCoordinate(lastCoord), winnerUpdatedBoard, isBoardAtCoordinatesFull(createCoorinatesFromCoordinate(lastCoord), state))
+        ),
+        Opt.getOrElse(f.constant(state.board))
+    )
 })
 
-export const updateState = (coordinates: Coordinates, state: GameState): GameState =>
-    getNewStateWrapper(changeAtCoordinates(state.turn, coordinates, state.board), state, coordinates)
+
+export const updateStateFromMove = (m: Move, s: GameState) =>
+    updateState(newUpdateWinner(newUpdateBoardWithMove(m)(s.board)), s, m)
+
+export const updateStateFromMoveMessage = (g: wsfns.MoveMessage, state: GameState): GameState =>
+    f.pipe(updateStateFromMove(g, state), utils.logAndTransformData(JSON.stringify), utils.log(JSON.stringify(g)))
 
 export default startState;

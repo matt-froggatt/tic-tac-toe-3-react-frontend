@@ -2,92 +2,99 @@ import React, { useEffect, useState } from "react";
 import startState, {
     BoardState,
     Coordinates,
-    createCoordinates,
+    createEmptyCoordinates,
     getBoardFromState,
     Player,
     GameState,
-    updateState,
+    updateStateFromMoveMessage,
+    getGameWinner,
+    updateStateFromMove
 } from "../gameRules";
 import Board from "./Board/Board";
 import CurrentPlayer from "./Board/CurrentPlayer";
 import WinnerModal from "./WinnerModal";
 import IdModal from "./IdModal";
 import * as f from "fp-ts/lib/function";
-import * as socketfns from "../Helpers/FunctionalWebSockets";
+import * as wsfns from "../Helpers/FunctionalWebSockets";
 import * as utils from "../Helpers/FunctionalUtilities"
 import * as Opt from 'fp-ts/lib/Option'
-import * as Eit from 'fp-ts/lib/Either'
 import * as m from 'monocle-ts'
 import * as F from "fp-ts-std/Function";
-import * as str from "fp-ts/string"
-import * as io from "io-ts"
-import { json, number } from "fp-ts";
+import * as T from "fp-ts/Tuple"
 
-interface GameMessage {
-    command: string
-    id?: number
-}
 
-enum CommandType {
-    SetId = "respondId"
-}
 
 const URL = window.location.hostname + ":8080"
 
-const socket = socketfns.create(URL)
+const socket = wsfns.create(URL)
 
-const isCommandOfType = (commandType: CommandType) => (gameMessage: GameMessage) =>
-str.Eq.equals(m.Lens.fromProp<GameMessage>()('command').get(gameMessage), commandType)
-
-const useBoard = (): [BoardState, Player, Player, (c: Coordinates) => void, () => void] => {
+const useBoard = (): [BoardState, Player, Player, (id: Opt.Option<number>) => (c: Coordinates) => void, () => void, (moveMessage: wsfns.MoveMessage) => void] => {
     const [state, setState] = useState<GameState>(startState)
+    console.log("Function definition...", JSON.stringify(state))
     return [
         getBoardFromState(state),
-        state.winner,
+        getGameWinner(state),
         state.turn,
-        (coordinates: Coordinates) => setState(updateState(coordinates, state)),
-        () => setState(startState)
+        (id) => (coordinates: Coordinates) => {            
+            console.log("About to send message...", JSON.stringify(state))
+            Opt.map((p1id) => wsfns.send(JSON.stringify({ "command": wsfns.RequestCommand.MakeMove, "id": p1id, "coordinates": coordinates, "player": state.turn }))(socket))(id)
+            setState(prevState => updateStateFromMove({
+                player: state.turn,
+                coordinates: coordinates
+            }, prevState))
+        },
+        () => setState(startState),
+        (m) => {
+            console.log("Updating...", JSON.stringify(state))
+            setState(prevState => updateStateFromMoveMessage(m, prevState))
+        }
     ]
 }
 
-const connectToWebSocket: (setId: (id: Opt.Option<number>) => void) => (ws: WebSocket) => WebSocket = (setId) => f.flow(
+const connectToWebSocket: (setId: (id: Opt.Option<number>) => void, setGameStarted: (game: boolean) => void, updateBoardFromMessage: (m: wsfns.MoveMessage) => void) => (ws: WebSocket) => WebSocket = (setId, setGameStarted, updateBoardFromMoveMessage) => f.flow(
     utils.log("Attempting Connection..."),
-    socketfns.onOpen(
+    wsfns.onOpen(
         f.flow(
             utils.log("Successfully Connected"),
-            socketfns.send(JSON.stringify({ "command": "requestId" })),
+            T.mapFst(wsfns.send(JSON.stringify({ "command": wsfns.RequestCommand.RequestId }))),
         )
     ),
-    socketfns.onMessage(
-        f.flow(
-            socketfns.event,
-            m.Lens.fromProp<MessageEvent>()('data').get,
-            utils.logValue, // This is just an example, modify the transform function as needed
-            JSON.parse,
-            (r) => r as GameMessage,
-            F.guard<GameMessage, any>([
-                [isCommandOfType(CommandType.SetId), f.flow(m.Lens.fromProp<GameMessage>()('id').get, Opt.fromNullable, setId)],
+    wsfns.onMessage(
+        T.mapSnd(
+            f.flow(
+                m.Lens.fromProp<MessageEvent>()('data').get,
+                utils.logValue,
+                JSON.parse,
+                (r) => r as wsfns.GameMessage,
+                F.guard<wsfns.GameMessage, any>([
+                    [wsfns.isCommandOfType(wsfns.ResponseCommand.SetId), f.flow(m.Lens.fromProp<wsfns.GameMessage>()('id').get, Opt.fromNullable, setId)],
+                    [wsfns.isCommandOfType(wsfns.ResponseCommand.JoinGameFailed), () => console.log("Join Game Failed")],
+                    [wsfns.isCommandOfType(wsfns.ResponseCommand.JoinGameSucceeded), () => setGameStarted(true)],
+                    [wsfns.isCommandOfType(wsfns.ResponseCommand.UpdateBoardFromMove), f.flow((m) => m as wsfns.MoveMessage, updateBoardFromMoveMessage)],
                 ])(utils.logAndTransformData((data) => "Unrecognized command: " + JSON.stringify(data)))
+            )
         )
     ),
-    socketfns.onClose(
+    wsfns.onClose(
         f.flow(
             utils.logAndTransformData(([, event]: [WebSocket, CloseEvent]) => `Socket Closed Connection: ${event}`),
-            socketfns.send("Client Closed!")
+            T.mapFst(wsfns.send("Client Closed!"))
         )
     ),
-    socketfns.onError((error: any) => utils.logAndTransformData(() => `Socket Error: ${error}`))
+    wsfns.onError((error: any) => utils.logAndTransformData(() => `Socket Error: ${error}`))
 )
 
-const coordinates = createCoordinates()
+const coordinates = createEmptyCoordinates()
 
 function App() {
     const [id, setId] = useState<Opt.Option<number>>(Opt.none)
     const [gameStarted, setGameStarted] = useState<boolean>(false)
-    const [board, winner, turn, playAtCoordinates, playAgain] = useBoard()
+    const [board, winner, turn, generatePlayAtCoordinates, playAgain, updateBoardFromMoveMessage] = useBoard()
+
+    const playAtCoordinates = generatePlayAtCoordinates(id)
 
     useEffect(() => {
-        connectToWebSocket(setId)(socket)
+        connectToWebSocket(setId, setGameStarted, updateBoardFromMoveMessage)(socket)
     }, [])
 
     return (
@@ -98,13 +105,22 @@ function App() {
                     coordinates={coordinates}
                     updateState={playAtCoordinates}
                 />
-                <CurrentPlayer currentPlayer={turn}/>
+                <CurrentPlayer currentPlayer={turn} />
             </div>
-            <IdModal id={id} onIdSubmit={() => {
-                setId(Opt.none)
-                setGameStarted(true)
-            }} gameStarted={gameStarted}/>
-            <WinnerModal winner={winner} onPlayAgain={playAgain}/>
+            <IdModal id={id} onP2IdSubmit={
+                Opt.map(
+                    (p2Id) =>
+                        Opt.map((p1id) => {
+                            wsfns.send(JSON.stringify({
+                                command: wsfns.RequestCommand.JoinGame,
+                                p2Id: p2Id,
+                                id: p1id
+                            }))(socket)
+                        }
+                        )(id)
+                )
+            } gameStarted={gameStarted} />
+            <WinnerModal winner={winner} onPlayAgain={playAgain} />
         </div>
     );
 }

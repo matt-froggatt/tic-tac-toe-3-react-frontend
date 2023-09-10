@@ -8,11 +8,11 @@ import * as m from "monocle-ts";
 
 interface IDModalProps {
     id: Opt.Option<number>
-    onIdSubmit: (id: Opt.Option<number>) => void
+    onP2IdSubmit: (p2Id: Opt.Option<number>) => void
     gameStarted: boolean
 }
 
-const IdModal: React.FC<IDModalProps> = ({ id, onIdSubmit, gameStarted}) => {
+const IdModal: React.FC<IDModalProps> = ({ id, onP2IdSubmit: onIdSubmit, gameStarted}) => {
     const [isLoading, setIsLoading] = useState(true)
     const [enteredValue, setEnteredValue] = useState<Opt.Option<number>>(Opt.none)
 
